@@ -1,0 +1,119 @@
+@page "/allocation-centre"
+@inject NavigationManager Navigation
+@using QHPFH_ConceptPrototype.Data
+
+<section class="page-shell-card bed-mgmt-page allocation-centre-page">
+    <header class="ac-header">
+        <h2>Allocation Centre</h2>
+        <p>Multi-ward patient movement and transfer coordination.</p>
+    </header>
+
+    <section class="bm-filter-row ac-filter-row">
+        <div class="bm-filter"><span>Facility</span><button>QCH</button></div>
+        <div class="bm-filter"><span>HHS</span><button>All</button></div>
+        <div class="bm-filter"><span>Destination Ward</span><button>All</button></div>
+        <div class="bm-filter"><span>Date</span><button>Today</button></div>
+    </section>
+
+    <div class="ac-layout">
+        <section class="ac-lanes" aria-label="Allocation queues">
+            @foreach (var lane in QueueLanes)
+            {
+                <article class="ac-lane-card">
+                    <header>
+                        <h3>@lane.Name</h3>
+                        <span>@lane.Patients.Count queued</span>
+                    </header>
+
+                    <div class="ac-chip-list">
+                        @foreach (var patient in lane.Patients)
+                        {
+                            <div class="ac-chip">
+                                <strong>@patient.FirstName @patient.LastName</strong>
+                                <small>@patient.SourceType · ETA @patient.EstimatedArrivalTime</small>
+                            </div>
+                        }
+                    </div>
+                </article>
+            }
+        </section>
+
+        <aside class="ac-destination-panel">
+            <article>
+                <h4>Destination Panel</h4>
+                <div class="bm-targets">
+                    @foreach (var destination in Destinations)
+                    {
+                        <div class="bm-move-target">@destination</div>
+                    }
+                </div>
+            </article>
+
+            <article class="ac-note">
+                <p>Future workspace for cross-ward and cross-facility allocation workflows.</p>
+            </article>
+
+            <button class="bm-primary ac-ward-link" @onclick="OpenWardOperations">Open Ward Operations</button>
+        </aside>
+    </div>
+</section>
+
+@code {
+    private static readonly string[] LaneNames =
+    [
+        "Elective Admissions",
+        "ED Admissions",
+        "Add On Patients",
+        "IHT",
+        "Pending Transfer",
+        "Discharge Pending"
+    ];
+
+    private static readonly string[] Destinations =
+    [
+        "Ward 8A Surgical",
+        "Ward 2A General Medicine",
+        "ED Short Stay",
+        "ICU",
+        "Paeds",
+        "Respiratory",
+        "Cardiology"
+    ];
+
+    private readonly List<QueueLane> QueueLanes = [];
+
+    protected override void OnInitialized()
+    {
+        var demoPatients = DemoHubData.BuildPatientAdmissions();
+
+        foreach (var lane in LaneNames)
+        {
+            var selectedPatients = demoPatients
+                .Where(x => LaneMatchesPatient(lane, x.SourceType, x.DelayedDischarge))
+                .Take(3)
+                .ToList();
+
+            if (selectedPatients.Count == 0)
+            {
+                selectedPatients = demoPatients.Take(3).ToList();
+            }
+
+            QueueLanes.Add(new QueueLane(lane, selectedPatients));
+        }
+    }
+
+    private static bool LaneMatchesPatient(string laneName, string sourceType, bool delayedDischarge) => laneName switch
+    {
+        "Elective Admissions" => sourceType == "Elective",
+        "ED Admissions" => sourceType == "ED",
+        "Add On Patients" => sourceType == "OPD",
+        "IHT" => sourceType == "IHT",
+        "Pending Transfer" => sourceType is "ED" or "IHT",
+        "Discharge Pending" => delayedDischarge,
+        _ => false
+    };
+
+    private void OpenWardOperations() => Navigation.NavigateTo("ward-operations");
+
+    private sealed record QueueLane(string Name, List<Models.PatientAdmission> Patients);
+}

@@ -1,0 +1,11 @@
+<section class="bm-shared-panel" aria-label="Patient flow and discharge">
+    <header><h3>Patient flow and discharge</h3><span class="bm-shared-status">@Snapshot.EscalationStatus</span></header>
+    <div class="bm-shared-swimlanes">
+        <div><span>Admission pressure</span><strong>@Snapshot.ExpectedAdmissions</strong></div>
+        <div><span>Discharge opportunities</span><strong>@Snapshot.PlannedDischarges</strong></div>
+        <div><span>Transfer delays / requests</span><strong>@Snapshot.TransferRequests</strong></div>
+        <div><span>Available capacity</span><strong>@Snapshot.AvailableBeds</strong></div>
+    </div>
+</section>
+
+@code { [Parameter, EditorRequired] public CapacitySnapshot Snapshot { get; set; } = default!; }

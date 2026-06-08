@@ -1,0 +1,141 @@
+<nav class="primary-nav" aria-label="Primary">
+    <div class="primary-nav-track" role="menubar">
+        @if (IsCompact)
+        {
+            <button type="button" class="nav-link selected compact-active"><span>@PrimaryItems.First(x => x.Key == _activePrimaryKey).Label</span></button>
+        }
+        else
+        {
+            <button type="button" class="home-link @GetSelectedClass("home")" aria-label="Home" @onclick='() => SelectPrimary("home")'>
+                <img src="images/header/home_icon.svg" alt="Home" class="home-icon" />
+            </button>
+
+            @foreach (var item in PrimaryItems)
+            {
+                var isActive = item.Key == _activePrimaryKey;
+                <button type="button" class="nav-link nav-link-@item.Key @(isActive ? "selected" : null)" @onclick="() => SelectPrimary(item.Key)">
+                    <span>@item.Label</span>
+                    @if (item.HasSubMenu)
+                    {
+                        <MudIcon Icon="@Icons.Material.Outlined.ExpandMore" Size="Size.Small" Class="nav-caret" />
+                    }
+                </button>
+            }
+        }
+
+        <button type="button"
+                class="concept-nav-inline-toggle"
+                aria-label="@(IsCompact ? "Expand workspace navigation" : "Collapse workspace navigation")"
+                @onclick="OnToggleCompact">
+            <MudIcon Icon="@(IsCompact ? Icons.Material.Outlined.LastPage : Icons.Material.Outlined.FirstPage)" Size="Size.Small" />
+        </button>
+    </div>
+
+    @if (!IsCompact && CurrentSubItems.Count > 0)
+    {
+        <div class="sub-nav-track" role="menubar" aria-label="Secondary">
+            @foreach (var subItem in CurrentSubItems)
+            {
+                var isSubActive = subItem == _activeSubItem;
+                <button type="button" class="sub-nav-link @(isSubActive ? "selected" : null)" @onclick="() => SelectSubItem(subItem)"><span>@subItem</span></button>
+            }
+        </div>
+    }
+
+
+    @if (!IsCompact && _activePrimaryKey == "bed")
+    {
+        <div class="nav-context-strip" aria-label="Current facility context">
+            <span>Gold Coast University Hospital</span>
+            <strong>High</strong>
+        </div>
+    }
+</nav>
+
+@code {
+    [Inject] private QHPFH_ConceptPrototype.Components.Shells.NavigationState NavigationState { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private readonly List<PrimaryNavItem> PrimaryItems =
+    [
+        new("myhub", "MyHub", false, []),
+        new("hospital", "Hospital Overview", false, []),
+        new("dd", "Delayed Discharge", true, ["DD Hub", "Patient Management", "Census Management", "DDP Census"]),
+        new("bed", "Bed & Ward", true, ["DD Hub", "Bed Management", "Ward Operations", "Allocation Centre"]),
+        new("scenario", "Scenario Mapping", false, []),
+        new("journey", "Patient Journey", false, []),
+        new("apps", "Connected Apps", false, [])
+    ];
+
+    private string _activePrimaryKey = "home";
+    private string _activeSubItem = string.Empty;
+
+    private IReadOnlyList<string> CurrentSubItems => GetSubItemsForKey(_activePrimaryKey);
+
+    [Parameter] public bool IsDarkMode { get; set; }
+    [Parameter] public bool IsCompact { get; set; }
+    [Parameter] public EventCallback OnToggleCompact { get; set; }
+
+    private void SelectPrimary(string key)
+    {
+        _activePrimaryKey = key;
+        _activeSubItem = GetSubItemsForKey(_activePrimaryKey).FirstOrDefault() ?? string.Empty;
+        NavigationState.SetActive(_activePrimaryKey, _activeSubItem);
+        NavigateForSelection(_activePrimaryKey, _activeSubItem);
+    }
+
+    private string GetSelectedClass(string key) => key == _activePrimaryKey ? "selected" : string.Empty;
+
+    protected override void OnInitialized()
+    {
+        SyncSelectionFromCurrentRoute();
+    }
+
+    private void SelectSubItem(string subItem)
+    {
+        _activeSubItem = subItem;
+        NavigationState.SetActive(_activePrimaryKey, _activeSubItem);
+        NavigateForSelection(_activePrimaryKey, _activeSubItem);
+    }
+
+    private IReadOnlyList<string> GetSubItemsForKey(string key) =>
+        PrimaryItems.FirstOrDefault(x => x.Key == key)?.SubItems ?? [];
+
+    private void SyncSelectionFromCurrentRoute()
+    {
+        var relativePath = Nav.ToBaseRelativePath(Nav.Uri).Trim('/').ToLowerInvariant();
+
+        (_activePrimaryKey, _activeSubItem) = relativePath switch
+        {
+            "" => ("home", string.Empty),
+            "bed-and-ward-hub" => ("bed", "DD Hub"),
+            "bed-management" => ("bed", "Bed Management"),
+            "ward-operations" => ("bed", "Ward Operations"),
+            "allocation-centre" => ("bed", "Allocation Centre"),
+            _ => ("home", string.Empty)
+        };
+
+        NavigationState.SetActive(_activePrimaryKey, _activeSubItem);
+    }
+
+    private void NavigateForSelection(string primaryKey, string subItem)
+    {
+        var route = primaryKey switch
+        {
+            "home" => string.Empty,
+            "bed" => subItem switch
+            {
+                "DD Hub" => "bed-and-ward-hub",
+                "Bed Management" => "bed-management",
+                "Ward Operations" => "ward-operations",
+                "Allocation Centre" => "allocation-centre",
+                _ => string.Empty
+            },
+            _ => string.Empty
+        };
+
+        Nav.NavigateTo(route);
+    }
+
+    private sealed record PrimaryNavItem(string Key, string Label, bool HasSubMenu, List<string> SubItems);
+}

@@ -1,0 +1,93 @@
+@page "/bed-and-ward-hub"
+@using QHPFH_ConceptPrototype.Data
+@inject NavigationManager Navigation
+
+<section class="page-shell-card bed-mgmt-page bed-ward-hub-page">
+    <header class="bwh-hero">
+        <div>
+            <p class="bwh-kicker">Bed &amp; Ward</p>
+            <h2>DD Hub</h2>
+            <p>Single front door into the current bed management, ward operations and allocation workspaces.</p>
+        </div>
+        <div class="bwh-hero-actions">
+            <button type="button" class="bm-ghost" @onclick='() => Navigation.NavigateTo("bed-management")'>Open Bed Management</button>
+            <button type="button" class="bm-primary" @onclick='() => Navigation.NavigateTo("allocation-centre")'>Open Allocation Centre</button>
+        </div>
+    </header>
+
+    <section class="bwh-metric-grid" aria-label="Flow summary">
+        <article>
+            <span>Operational pressure</span>
+            <strong>High</strong>
+            <small>92% occupancy across priority wards</small>
+        </article>
+        <article>
+            <span>Available beds</span>
+            <strong>@AvailableBeds</strong>
+            <small>Across @WardCount wards</small>
+        </article>
+        <article>
+            <span>Delayed flow patients</span>
+            <strong>@DelayedFlowPatients</strong>
+            <small>Awaiting discharge, transfer or review</small>
+        </article>
+        <article>
+            <span>Admissions today</span>
+            <strong>@AdmissionsToday</strong>
+            <small>Elective, ED add-ons and IHT returns</small>
+        </article>
+    </section>
+
+    <div class="bwh-workspace-grid">
+        <section class="bwh-workspace-list">
+            <h3>Core workspaces</h3>
+            @foreach (var workspace in Workspaces)
+            {
+                <article class="bwh-workspace-card">
+                    <div>
+                        <p>@workspace.Eyebrow</p>
+                        <h4>@workspace.Title</h4>
+                        <span>@workspace.Description</span>
+                    </div>
+                    <button type="button" class="bm-ghost" @onclick="() => Navigation.NavigateTo(workspace.Route)">Open</button>
+                </article>
+            }
+        </section>
+
+        <aside class="bwh-panel">
+            <h3>Priority wards</h3>
+            @foreach (var ward in PriorityWards)
+            {
+                <div class="bwh-ward-row">
+                    <div>
+                        <strong>@ward.WardName</strong>
+                        <span>@ward.OccupiedBeds / @ward.OpenBeds beds</span>
+                    </div>
+                    <em class="@ward.PressureStatus.ToLowerInvariant()">@ward.PressureStatus</em>
+                </div>
+            }
+        </aside>
+    </div>
+</section>
+
+@code {
+    private readonly List<Models.WardRecord> PriorityWards = DemoWardData.BuildWardRecords()
+        .Where(x => x.Facility == "Gold Coast University Hospital")
+        .OrderByDescending(x => x.OccupancyPercent)
+        .Take(5)
+        .ToList();
+
+    private int WardCount => PriorityWards.Count;
+    private int AvailableBeds => PriorityWards.Sum(x => Math.Max(x.AvailableBeds, 0));
+    private int DelayedFlowPatients => PriorityWards.Sum(x => x.DelayedDischargeCount);
+    private int AdmissionsToday => PriorityWards.Sum(x => x.ElectiveAdmissionsToday + x.EdAddOnsToday + x.HithReturnsToday);
+
+    private static readonly WorkspaceLink[] Workspaces =
+    [
+        new("Orchestration", "Bed Management", "Coordinate system pressure, ward actions, scenarios and recommended interventions.", "bed-management"),
+        new("Ward team view", "Ward Operations", "Manage bays, bed states, incoming demand, operational events and quick actions.", "ward-operations"),
+        new("Patient movement", "Allocation Centre", "Triage incoming ED, OPD, IHT and elective demand against ward destinations.", "allocation-centre")
+    ];
+
+    private sealed record WorkspaceLink(string Eyebrow, string Title, string Description, string Route);
+}

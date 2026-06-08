@@ -1,0 +1,25 @@
+@using QHPFH_ConceptPrototype.Components.BedManagement.Shared
+
+<section class="bm-v2-view bm-v2-view--hhs" aria-label="HHS V2 balanced view">
+    <OperationalBanner Snapshot="@Snapshot" Message="@($"Regional SAFEST coordination: focus senior support on facilities constraining flow across {Hhs.Name}.")" Tone="Balanced" />
+    <div class="bm-v2-emphasis-table"><PerformanceTable Title="Facility support priorities and flow constraints" Rows="@FacilityRows" /></div>
+    <MetricTileRow Snapshot="@Snapshot" />
+    <div class="bm-v2-coordination-grid">
+        <CoordinationPanel Events="@Events" />
+        <ActionTracker Signals="@Actions" />
+        <InsightCardGrid Signals="@Hhs.Signals" Version="@BedManagementVersion.V2Balanced" />
+    </div>
+    <FlowSwimlanePanel Snapshot="@Snapshot" />
+</section>
+
+@code {
+    [Parameter, EditorRequired] public HhsNetwork Hhs { get; set; } = default!;
+    private CapacitySnapshot Snapshot => BedManagementDemoData.GetHhsSnapshot(Hhs.Id)!;
+    private IReadOnlyList<PerformanceRow> FacilityRows => Hhs.Facilities.Select(facility =>
+    {
+        var snapshot = BedManagementDemoData.GetFacilitySnapshot(facility.Id)!;
+        return new PerformanceRow(facility.ShortName, $"{snapshot.OccupancyPercentage}%", facility.EscalationStatus, $"{snapshot.AvailableBeds} capacity · discharge {facility.DischargePressureIndicator} · transfer {facility.TransferPressureIndicator}");
+    }).OrderBy(row => row.Status == "BAU").ToArray();
+    private IReadOnlyList<OperationalEvent> Events => Hhs.Facilities.SelectMany(facility => facility.OperationalEvents).Take(5).ToArray();
+    private IReadOnlyList<OperationalSignal> Actions => Hhs.Facilities.SelectMany(facility => facility.Wards).SelectMany(ward => ward.OperationalSignals).Take(5).ToArray();
+}

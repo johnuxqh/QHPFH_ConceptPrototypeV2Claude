@@ -1,0 +1,53 @@
+<div class="std-shell" role="application">
+    <header class="std-header" role="banner">
+        <div class="std-header-bg std-header-bg-left" aria-hidden="true"></div>
+        <div class="std-header-bg std-header-bg-right" aria-hidden="true"></div>
+
+        <button type="button" class="std-burger" aria-label="Toggle menu" @onclick="ToggleMenu">
+            <MudIcon Icon="@Icons.Material.Filled.Menu" Size="Size.Small" />
+        </button>
+        <div class="std-title"><strong>QH</strong> Patient Flow Hub</div>
+        <div class="std-page-breadcrumb" aria-label="Current page"></div>
+
+        <div class="std-header-right">
+            <ShellModeToggle Mode="CurrentShellMode" OnModeChanged="OnShellModeChanged" />
+            <div class="std-profile-name">Dr Steven Strange</div>
+            <img class="std-avatar" src="images/header/profilepic.png" alt="Dr Steven Strange profile photo" />
+        </div>
+    </header>
+
+    <div class="std-body">
+        <nav class="std-rail" aria-label="STD menu">
+            <button type="button" class="std-rail-item" @onclick="ToggleMenu"><MudIcon Icon="@Icons.Material.Outlined.Home" Size="Size.Small" /></button>
+            <button type="button" class="std-rail-item"><MudIcon Icon="@Icons.Material.Outlined.BarChart" Size="Size.Small" /></button>
+            <button type="button" class="std-rail-item"><MudIcon Icon="@Icons.Material.Outlined.FavoriteBorder" Size="Size.Small" /></button>
+            <button type="button" class="std-rail-item"><MudIcon Icon="@Icons.Material.Outlined.ViewList" Size="Size.Small" /></button>
+            <button type="button" class="std-rail-item"><MudIcon Icon="@Icons.Material.Outlined.GridView" Size="Size.Small" /></button>
+        </nav>
+
+        @if (_isMenuOpen)
+        {
+            <aside class="std-menu" aria-label="STD expanded menu">
+                <button type="button" class="std-menu-item selected">Home</button>
+                <button type="button" class="std-menu-item">Discharge Delays</button>
+                <button type="button" class="std-menu-item">Patient Hub</button>
+                <button type="button" class="std-menu-item">Census Report</button>
+                <button type="button" class="std-menu-item">Census Submissions</button>
+                <button type="button" class="std-menu-item">Settings</button>
+            </aside>
+        }
+
+        <main class="std-content" role="main">
+            @ChildContent
+        </main>
+    </div>
+</div>
+
+@code {
+    private bool _isMenuOpen;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public ShellMode CurrentShellMode { get; set; }
+    [Parameter] public EventCallback<ShellMode> OnShellModeChanged { get; set; }
+
+    private void ToggleMenu() => _isMenuOpen = !_isMenuOpen;
+}

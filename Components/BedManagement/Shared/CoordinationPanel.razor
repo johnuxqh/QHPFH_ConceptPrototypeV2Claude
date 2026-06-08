@@ -1,0 +1,8 @@
+<section class="bm-shared-panel" aria-label="Escalations and flow coordination">
+    <header><h3>Escalations and coordination</h3><span>@Events.Count active updates</span></header>
+    <div class="bm-shared-list">
+        @foreach (var item in Events.Take(5)) { <div><time>@item.TimeLabel</time><span class="bm-shared-status">@item.Severity</span><p><strong>@item.Type</strong> · @item.Summary</p></div> }
+        @if (Events.Count == 0) { <p class="bm-shared-empty">No active flow escalations or coordination updates.</p> }
+    </div>
+</section>
+@code { [Parameter] public IReadOnlyList<OperationalEvent> Events { get; set; } = []; }

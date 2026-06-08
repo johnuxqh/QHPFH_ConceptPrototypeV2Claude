@@ -1,0 +1,5 @@
+<section class="bm-shared-panel bm-shared-compact" aria-label="Cleaning and maintenance status">
+    <header><h3>Bed turnaround constraints</h3></header>
+    <div class="bm-shared-swimlanes"><div><span>Pending cleaning</span><strong>@BedList.Count(b => b.Status == BedStatus.PendingCleaning)</strong></div><div><span>Cleaning active</span><strong>@BedList.Count(b => b.Cleaning.Status == FlowStatus.InProgress)</strong></div><div><span>Ready / available</span><strong>@BedList.Count(b => b.Status == BedStatus.Available)</strong></div><div><span>Maintenance</span><strong>@BedList.Count(b => b.Status == BedStatus.Maintenance)</strong></div></div>
+</section>
+@code { [Parameter] public IEnumerable<Bed> Beds { get; set; } = []; private IReadOnlyList<Bed> BedList => Beds.ToArray(); }

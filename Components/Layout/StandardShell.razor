@@ -1,0 +1,87 @@
+<div class="std-shell" role="application">
+    @if (_isProfileOpen)
+    {
+        <button class="profile-overlay" type="button" aria-label="Close profile menu" @onclick="CloseProfile"></button>
+    }
+
+    <header class="std-header" role="banner">
+        <div class="std-header-bg std-header-bg-left" aria-hidden="true"></div>
+        <div class="std-header-bg std-header-bg-right" aria-hidden="true"></div>
+
+        <button type="button" class="std-burger" aria-label="Toggle menu" @onclick="ToggleMenu">
+            <MudIcon Icon="@Icons.Material.Filled.Menu" Size="Size.Small" />
+        </button>
+        <div class="std-title"><strong>QH</strong> Patient Flow Hub</div>
+        <div class="std-page-breadcrumb" aria-label="Current page"></div>
+
+        <div class="std-header-right">
+            @HeaderContent
+            <div class="std-profile">
+                <button class="std-profile-trigger" type="button" @onclick="ToggleProfile" aria-expanded="@_isProfileOpen">
+                    <img class="std-avatar" src="images/header/profilepic.png" alt="Dr Steven Strange profile photo" />
+                    <span class="std-profile-name">Dr Steven Strange</span>
+                </button>
+
+                @if (_isProfileOpen)
+                {
+                    <section class="qld-profile-panel" aria-label="User profile menu">
+                        <div class="qld-profile-panel-header">
+                            <h2>User Profile</h2>
+                            <button type="button" class="qld-profile-close" aria-label="Close" @onclick="CloseProfile">×</button>
+                        </div>
+                        <div class="qld-profile-card">
+                            <div class="qld-profile-row qld-profile-identity">
+                                <img class="qld-avatar small" src="images/header/profilepic.png" alt="Dr Steven Strange profile photo" />
+                                <span>Dr Steven Strange</span>
+                            </div>
+                            <div class="qld-profile-data"><span>Email:</span><span>dr.groot@hospital.qld.gov.au</span></div>
+                            <div class="qld-profile-data"><span>Department:</span><span>Emergency Medicine</span></div>
+                            <div class="qld-profile-data"><span>Role:</span><span>Senior Consultant</span></div>
+                        </div>
+                        <button type="button" class="qld-profile-action">Change Password</button>
+                        <button type="button" class="qld-profile-action">Sign Out</button>
+                    </section>
+                }
+            </div>
+        </div>
+    </header>
+
+    <div class="std-body">
+        <nav class="std-rail" aria-label="STD menu">
+            <button type="button" class="std-rail-item"><MudIcon Icon="@Icons.Material.Outlined.Home" Size="Size.Small" /></button>
+            <button type="button" class="std-rail-item"><MudIcon Icon="@Icons.Material.Outlined.BarChart" Size="Size.Small" /></button>
+            <button type="button" class="std-rail-item"><MudIcon Icon="@Icons.Material.Outlined.FavoriteBorder" Size="Size.Small" /></button>
+            <button type="button" class="std-rail-item"><MudIcon Icon="@Icons.Material.Outlined.ViewList" Size="Size.Small" /></button>
+            <button type="button" class="std-rail-item"><MudIcon Icon="@Icons.Material.Outlined.GridView" Size="Size.Small" /></button>
+        </nav>
+
+        @if (_isMenuOpen)
+        {
+            <aside class="std-menu" aria-label="STD expanded menu">
+                <button type="button" class="std-menu-item selected">Home</button>
+                <button type="button" class="std-menu-item">Discharge Delays</button>
+                <button type="button" class="std-menu-item">Patient Hub</button>
+                <button type="button" class="std-menu-item">Census Report</button>
+                <button type="button" class="std-menu-item">Census Submissions</button>
+                <button type="button" class="std-menu-item">Settings</button>
+            </aside>
+        }
+
+        <main class="std-content" role="main">
+            <div class="shell-mode-watermark" aria-hidden="true">STD</div>
+            @ChildContent
+        </main>
+    </div>
+</div>
+
+@code {
+    private bool _isMenuOpen;
+    private bool _isProfileOpen;
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? HeaderContent { get; set; }
+
+    private void ToggleMenu() => _isMenuOpen = !_isMenuOpen;
+    private void ToggleProfile() => _isProfileOpen = !_isProfileOpen;
+    private void CloseProfile() => _isProfileOpen = false;
+}

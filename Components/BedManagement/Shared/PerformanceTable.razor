@@ -1,0 +1,15 @@
+<section class="bm-shared-panel" aria-label="Performance comparison">
+    <header><h3>@Title</h3></header>
+    <div class="bm-shared-table" role="table">
+        @foreach (var row in Rows)
+        {
+            <div class="bm-shared-table-row" role="row"><strong role="cell">@row.Label</strong><span role="cell">@row.Detail</span><b role="cell">@row.Value</b><em role="cell">@row.Status</em></div>
+        }
+        @if (!Rows.Any()) { <p class="bm-shared-empty">No operational priorities currently require attention.</p> }
+    </div>
+</section>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Performance comparison";
+    [Parameter] public IEnumerable<PerformanceRow> Rows { get; set; } = [];
+}

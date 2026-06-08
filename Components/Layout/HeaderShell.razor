@@ -1,0 +1,83 @@
+<header class="concept-header" role="banner">
+    @if (_isProfileOpen)
+    {
+        <button class="profile-overlay" type="button" aria-label="Close profile menu" @onclick="CloseProfile"></button>
+    }
+
+    <div class="qld-header-row">
+        <div class="qld-brand" aria-label="Queensland Health Patient Flow Hub">
+            <img class="qld-logo" src="@(IsDarkMode ? DarkLogoPath : LightLogoPath)" alt="Queensland Government" />
+            <div class="qld-divider" aria-hidden="true"></div>
+            <div class="qld-title-wrap">
+                <div class="qld-title"><strong>QH</strong> Patient Flow Hub</div>
+            </div>
+        </div>
+
+        <div class="qld-actions">
+            @HeaderContent
+            <div class="qld-search" role="search" aria-label="Header search">
+                <span class="qld-search-icon" aria-hidden="true">
+                    <MudIcon Icon="@Icons.Material.Outlined.Search" Size="Size.Small" />
+                </span>
+                <input type="search" class="qld-search-input" aria-label="Search" placeholder="Search facilities, wards, patients..." />
+                <button type="button" class="qld-search-button" aria-label="Open search filters">
+                    <MudIcon Icon="@Icons.Material.Outlined.ExpandMore" Size="Size.Small" />
+                </button>
+            </div>
+
+            <button type="button" class="qld-notification" aria-label="2 notifications">
+                <MudIcon Icon="@Icons.Material.Outlined.NotificationsNone" Size="Size.Small" />
+                <span>2</span>
+            </button>
+
+            <div class="qld-profile">
+                <button class="qld-profile-trigger" type="button" @onclick="ToggleProfile" aria-expanded="@_isProfileOpen">
+                    <img class="qld-avatar" src="images/header/profilepic.png" alt="Dr Steven Strange profile photo" />
+                    <span class="qld-profile-name">Dr Steven Strange</span>
+                    <MudIcon Icon="@(_isProfileOpen ? Icons.Material.Outlined.ExpandLess : Icons.Material.Outlined.ExpandMore)" Size="Size.Small" Class="qld-profile-chevron" />
+                </button>
+
+                @if (_isProfileOpen)
+                {
+                    <section class="qld-profile-panel" aria-label="User profile menu">
+                        <div class="qld-profile-panel-header">
+                            <h2>User Profile</h2>
+                            <button type="button" class="qld-profile-close" aria-label="Close" @onclick="CloseProfile">×</button>
+                        </div>
+                        <div class="qld-profile-card">
+                            <div class="qld-profile-row qld-profile-identity">
+                                <img class="qld-avatar small" src="images/header/profilepic.png" alt="Dr Steven Strange profile photo" />
+                                <span>Dr Steven Strange</span>
+                            </div>
+                            <div class="qld-profile-data"><span>Email:</span><span>steven.strange@hospital.qld.gov.au</span></div>
+                            <div class="qld-profile-data"><span>Department:</span><span>Patient Flow Command</span></div>
+                            <div class="qld-profile-data"><span>Role:</span><span>Clinical Flow Director</span></div>
+                        </div>
+                        <div class="qld-profile-card">
+                            <div class="qld-profile-data"><span>Theme:</span><button type="button" class="qld-theme-toggle" @onclick="OnToggleTheme">Switch to @(IsDarkMode ? "Light" : "Dark") Mode</button></div>
+                        </div>
+                        <button type="button" class="qld-profile-action">Change Password</button>
+                        <button type="button" class="qld-profile-action">Sign Out</button>
+                    </section>
+                }
+            </div>
+        </div>
+    </div>
+
+    <PrimaryNavigation IsDarkMode="IsDarkMode" IsCompact="IsConceptNavCompact" OnToggleCompact="OnToggleConceptNavCompact" />
+</header>
+
+@code {
+    private bool _isProfileOpen;
+    private const string LightLogoPath = "images/logos/CoAlight.svg";
+    private const string DarkLogoPath = "images/logos/CoAdark.svg";
+
+    [Parameter] public bool IsDarkMode { get; set; }
+    [Parameter] public EventCallback OnToggleTheme { get; set; }
+    [Parameter] public RenderFragment? HeaderContent { get; set; }
+    [Parameter] public bool IsConceptNavCompact { get; set; }
+    [Parameter] public EventCallback OnToggleConceptNavCompact { get; set; }
+
+    private void ToggleProfile() => _isProfileOpen = !_isProfileOpen;
+    private void CloseProfile() => _isProfileOpen = false;
+}

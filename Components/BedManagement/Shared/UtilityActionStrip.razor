@@ -1,0 +1,4 @@
+<nav class="bm-shared-utility" aria-label="Bed Management preview utilities">
+    @foreach (var action in Actions) { <button type="button" disabled title="Preview only">@action</button> }
+</nav>
+@code { private static readonly string[] Actions = ["Chat", "Reports", "Downtime", "On-call", "Support"]; }

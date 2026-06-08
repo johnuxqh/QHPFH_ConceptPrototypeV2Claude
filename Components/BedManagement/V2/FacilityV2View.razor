@@ -1,0 +1,32 @@
+@using QHPFH_ConceptPrototype.Components.BedManagement.Shared
+
+<section class="bm-v2-view bm-v2-view--facility" aria-label="Facility V2 balanced view">
+    <OperationalBanner Snapshot="@Snapshot" Message="@($"Bed manager SAFEST view: protect early discharge, resolve barriers and balance flow across all wards at {Facility.ShortName}.")" Tone="Balanced" />
+    <div class="bm-v2-facility-decision-grid">
+        <div class="bm-v2-emphasis-table"><PerformanceTable Title="Ward priorities: blockers, discharge and next-bed decisions" Rows="@WardRows" /></div>
+        <div class="bm-v2-stack bm-v2-stack--decision">
+            <AllocationSummary Snapshot="@Snapshot" />
+            <CleaningStatusPanel Beds="@Beds" />
+            <TransferQueuePanel Beds="@Beds" />
+        </div>
+    </div>
+    <MetricTileRow Snapshot="@Snapshot" />
+    <FlowSwimlanePanel Snapshot="@Snapshot" />
+    <div class="bm-v2-coordination-grid">
+        <CoordinationPanel Events="@Facility.OperationalEvents" />
+        <ActionTracker Signals="@Actions" />
+        <InsightCardGrid Signals="@Facility.Signals" Version="@BedManagementVersion.V2Balanced" />
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public Facility Facility { get; set; } = default!;
+    private CapacitySnapshot Snapshot => BedManagementDemoData.GetFacilitySnapshot(Facility.Id)!;
+    private IReadOnlyList<Bed> Beds => Facility.Wards.SelectMany(ward => ward.Beds).ToArray();
+    private IReadOnlyList<OperationalSignal> Actions => Facility.Wards.SelectMany(ward => ward.OperationalSignals).Take(5).ToArray();
+    private IReadOnlyList<PerformanceRow> WardRows => Facility.Wards.Select(ward =>
+    {
+        var snapshot = BedManagementDemoData.GetWardSnapshot(ward.Id)!;
+        return new PerformanceRow(ward.Name, $"{snapshot.OccupancyPercentage}%", ward.EscalationStatus, $"{snapshot.AvailableBeds} capacity · {snapshot.PlannedDischarges} discharge opportunities · {snapshot.TransferRequests} transfers · {snapshot.PendingCleaning} turnaround");
+    }).OrderBy(row => row.Status == "BAU").ToArray();
+}

@@ -1,0 +1,21 @@
+@using QHPFH_ConceptPrototype.Components.BedManagement.Shared
+
+<section class="bm-v1-view bm-v1-view--statewide" aria-label="Statewide V1 awareness view">
+    <OperationalBanner Snapshot="@Snapshot" Message="Statewide awareness: Metro South has the clearest pressure signal and requires the closest support watch." Tone="Awareness" />
+    <div class="bm-v1-awareness-grid">
+        <div class="bm-v1-emphasis-table"><PerformanceTable Title="HHS pressure and support requirements" Rows="@HhsRows" /></div>
+        <InsightCardGrid Signals="@State.Signals" Version="@BedManagementVersion.V2Balanced" ContextLabel="V1 awareness" />
+    </div>
+    <MetricTileRow Snapshot="@Snapshot" AwarenessMode="true" />
+</section>
+
+@code {
+    [Parameter, EditorRequired] public BedManagementState State { get; set; } = default!;
+    private CapacitySnapshot Snapshot => BedManagementDemoData.GetStatewideSnapshot();
+    private IReadOnlyList<PerformanceRow> HhsRows => State.HhsNetworks.Select(hhs =>
+    {
+        var snapshot = BedManagementDemoData.GetHhsSnapshot(hhs.Id)!;
+        var support = snapshot.EscalationStatus == "BAU" ? "Monitor" : "Support required";
+        return new PerformanceRow(hhs.Name, $"{snapshot.OccupancyPercentage}%", snapshot.EscalationStatus, $"{support} · {snapshot.AvailableBeds} available · {snapshot.ExpectedAdmissions} admissions vs {snapshot.PlannedDischarges} discharges");
+    }).OrderBy(row => row.Status == "BAU").ToArray();
+}

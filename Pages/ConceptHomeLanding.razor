@@ -1,0 +1,104 @@
+<section class="concept-home-launchpad">
+    <div class="pfh-launchpad-welcome @(welcomeDismissed ? "collapsed" : string.Empty)">
+        <div class="pfh-launchpad-welcome-label">✦ PFH Assistant</div>
+        <h2>Hi Dr Steven Strange, welcome to the Patient Flow Hub. Where are you working today?</h2>
+        <div class="pfh-launchpad-welcome-actions">
+            <button type="button" @onclick='() => SelectView("statewide")'>I’m here for statewide work</button>
+            <button type="button" @onclick='() => SelectView("gcuh")'>Today I’m at Gold Coast University Hospital</button>
+        </div>
+    </div>
+
+    <div class="pfh-launchpad-frame @(isGcuh ? "local-view" : "statewide-view")">
+        <header class="pfh-launchpad-header">
+            <div>
+                <h1>QH Patient Flow Hub</h1>
+                <p>@(isGcuh ? "Gold Coast University Hospital Situation Launch Pad" : "Statewide Situation Launch Pad")</p>
+                @if (isGcuh)
+                {
+                    <div class="pfh-launchpad-local-note">Local view selected: Gold Coast University Hospital</div>
+                }
+            </div>
+            <div class="pfh-launchpad-header-actions">
+                <span>Last updated: 09:42</span>
+                <button type="button">Filters</button>
+                <button type="button">View: System ▾</button>
+            </div>
+        </header>
+
+        <div class="pfh-launchpad-swimlanes">
+            <article class="pfh-launchpad-lane"><h3>DEMAND</h3><h4>Pre-Hospital & Arrivals</h4>
+                @if (isGcuh)
+                {
+                    <ul><li>QAS arrivals last 60 mins: <b>12</b></li><li>High acuity arrivals: <b>4</b></li><li>Ambulance POST average: <b class="status-red">31 mins ↑</b></li><li>Incoming arrivals expected next 90 mins: <b>8</b></li></ul>
+                    <div class="pfh-launchpad-chart">GCUH local catchment map placeholder</div>
+                }
+                else
+                {
+                    <p class="label">QAS Demand by HHS</p><div class="pfh-launchpad-chart">Queensland map placeholder with HHS regions</div>
+                    <p class="label">Top QAS Delays:</p><ul><li>RBWH 82 mins ↑</li><li>Logan 64 mins ↑</li><li>PAH 52 mins ↑</li></ul>
+                    <p class="label">Avg Ambulance POST (SEQ HHS):</p><ul><li>Metro South 27 mins</li><li>Metro North 24 mins</li><li>Gold Coast 23 mins</li><li>Sunshine Coast 22 mins</li><li>West Moreton 26 mins</li><li>Darling Downs 31 mins</li><li>Mater 22 mins</li></ul>
+                }
+            </article>
+            <article class="pfh-launchpad-lane"><h3>EMERGENCY</h3><h4>ED Capacity & Insights</h4>
+                @if (isGcuh)
+                {
+                    <ul><li>ED Presentations Yesterday: 276 ↑ 6%</li><li>Patients in ED: 74 ↑</li><li>Waiting Room: 31 ↑</li><li>AWAs: 11 ↑</li><li>ED Beds Available: 10</li><li>Capacity Score: Elevated / High</li></ul>
+                }
+                else
+                {
+                    <ul><li>ED Presentations Yesterday: 2,842 ↑ 8%</li><li>Patients in ED 49 ↑</li><li>Waiting Room 22 ↑</li><li>AWAs 15 ↓</li><li>ED Beds Available 10</li></ul>
+                }
+                <div class="pfh-launchpad-bed-row"><span class="red"></span><span class="red"></span><span class="amber"></span><span class="amber"></span><span class="amber"></span><span class="green"></span><span class="green"></span></div>
+            </article>
+            <article class="pfh-launchpad-lane"><h3>INPATIENT FLOW</h3><h4>Bed Capacity & Insights</h4>
+                @if (isGcuh)
+                {
+                    <ul><li>Total Inpatients: 658</li><li>Bed Occupancy: <b class="status-red">94% High</b></li><li>Beds Available in Hospital: 25</li><li>Surgical Beds Available: 7</li><li>Medical Beds Available: 9</li><li>ICU Beds Available: 2</li><li>Interhospital Transfers Today: 6</li></ul>
+                }
+                else
+                {
+                    <ul><li>Total Inpatients in Hospital: 5,334 ↑ 2%</li><li>Bed Occupancy gauge: <b class="status-amber">90% High</b></li><li>Elective Admissions Today: 146</li><li>Day Cases Today: 132</li><li>OPD Appointments Today: 1,248</li><li>Interhospital Transfers Today: 56</li></ul>
+                }
+                <div class="pfh-launchpad-gauge"><div class="needle"></div><span>0%</span><strong>@(isGcuh ? "94%" : "90%")</strong><span>100%</span></div>
+            </article>
+            <article class="pfh-launchpad-lane"><h3>DISCHARGE & EXIT</h3><h4>Delayed Discharge & Community</h4>
+                <div class="pfh-launchpad-chart">Predicted Discharge line chart placeholder</div>
+                @if (isGcuh)
+                {
+                    <ul><li>Predicted Discharges Today: 44</li><li>Discharges before 10am: 9</li><li>Patients on Hospital in the Home: 18</li><li>Aged Care Placement 5</li><li>NDIS / Community Support 4</li><li>Transport 3</li><li>Pharmacy / Meds Access 2</li><li>Imaging / Review Pending 2</li></ul>
+                }
+                else
+                {
+                    <ul><li>Patients on Hospital in the Home: 124 ↓ 5%</li><li>Aged Care Placement 12</li><li>NDIS / Community Support 9</li><li>Transport 7</li><li>Guardianship / Consent 5</li><li>Pharmacy / Meds Access 4</li></ul>
+                }
+            </article>
+        </div>
+
+        <div class="pfh-launchpad-flow-strip @(isGcuh ? "prominent" : string.Empty)">
+            @if (isGcuh)
+            {
+                <div>Ambulances arriving → 12 incoming / POST 31 mins</div><div>ED intake pressure → 10 ED beds available</div><div>Ward placement pressure → 25 hospital beds available / occupancy 94%</div><div>Exit opportunity → 44 predicted discharges / 18 HITH</div>
+            }
+            else
+            {
+                <div>High Arrivals — Rising</div><div>ED Congestion — Increasing</div><div>No Ward Capacity — High</div><div>Discharge Delays — Increasing</div>
+            }
+        </div>
+
+        <div class="pfh-launchpad-footer">
+            <section><h5>Operational notes</h5><ul><li>Metro South demand increasing</li><li>Surgical admissions trending high</li><li>Discharge flow slowing after 2pm</li><li>High pressure expected this evening</li></ul><button type="button">Add Note</button></section>
+            <section><h5>Shortcuts / Key</h5><div class="shortcut-grid"><a href="#">Patient Journey</a><a href="#">Bed & Ward Management</a><a href="#">Delayed Discharge Hub</a><a href="#">Scenario Mapping</a><a href="#">Connected Apps</a></div></section>
+        </div>
+    </div>
+</section>
+
+@code {
+    private bool welcomeDismissed;
+    private bool isGcuh;
+
+    private void SelectView(string selection)
+    {
+        isGcuh = selection == "gcuh";
+        welcomeDismissed = true;
+    }
+}

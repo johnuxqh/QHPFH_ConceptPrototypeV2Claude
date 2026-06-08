@@ -1,0 +1,32 @@
+@using QHPFH_ConceptPrototype.Components.BedManagement.Shared
+
+<section class="bm-v3-view bm-v3-view--hhs" aria-label="HHS V3 operational view">
+    <OperationalBanner Snapshot="@Snapshot" Message="Regional operational coordination: direct intervention toward constrained facilities, transfer pressure and discharge barriers." Tone="Operational" />
+    <div class="bm-v3-primary-grid">
+        <div class="bm-v3-emphasis-table"><PerformanceTable Title="Facility intervention and support priorities" Rows="@FacilityRows" /></div>
+        <div class="bm-v3-stack">
+            <ActionTracker Signals="@Actions" />
+            <AllocationSummary Snapshot="@Snapshot" />
+        </div>
+    </div>
+    <MetricTileRow Snapshot="@Snapshot" />
+    <div class="bm-v3-triple-grid">
+        <TransferQueuePanel Beds="@Beds" />
+        <CleaningStatusPanel Beds="@Beds" />
+        <CoordinationPanel Events="@Events" />
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public HhsNetwork Hhs { get; set; } = default!;
+    private CapacitySnapshot Snapshot => BedManagementDemoData.GetHhsSnapshot(Hhs.Id)!;
+    private IReadOnlyList<Bed> Beds => Hhs.Facilities.SelectMany(facility => facility.Wards).SelectMany(ward => ward.Beds).ToArray();
+    private IReadOnlyList<PerformanceRow> FacilityRows => Hhs.Facilities.Select(facility =>
+    {
+        var snapshot = BedManagementDemoData.GetFacilitySnapshot(facility.Id)!;
+        var priority = facility.EscalationStatus == "BAU" ? "Monitor" : "Intervene";
+        return new PerformanceRow(facility.ShortName, priority, facility.EscalationStatus, $"{snapshot.OccupancyPercentage}% occupied · discharge {facility.DischargePressureIndicator} · transfer {facility.TransferPressureIndicator} · {snapshot.AvailableBeds} available");
+    }).OrderBy(row => row.Status == "BAU").ToArray();
+    private IReadOnlyList<OperationalEvent> Events => Hhs.Facilities.SelectMany(facility => facility.OperationalEvents).Take(5).ToArray();
+    private IReadOnlyList<OperationalSignal> Actions => Hhs.Facilities.SelectMany(facility => facility.Wards).SelectMany(ward => ward.OperationalSignals).Take(5).ToArray();
+}

@@ -1,0 +1,801 @@
+@page "/ward-operations"
+@using Microsoft.AspNetCore.Components.Web
+@using MudBlazor
+@using QHPFH_ConceptPrototype.Components.Shared
+@inject NavigationManager Navigation
+
+<section class="page-shell-card bed-mgmt-page ward-ops ward-view-page" @onclick="CloseKpiInfo">
+    <header>
+        <h2>Ward Operations</h2>
+    </header>
+
+    <div class="bm-view-row">
+        <button class="bm-ghost version @(WardVersion == "V1" ? "active" : null)" @onclick='() => WardVersion = "V1"'>Version 1</button>
+        <button class="bm-ghost version @(WardVersion == "V2" ? "active" : null)" @onclick='() => WardVersion = "V2"'>Version 2 (Interactive)</button>
+    </div>
+
+    @if (WardVersion == "V1")
+    {
+        <section class="bm-capacity-banner red">
+            <strong>HOSPITAL CAPACITY STATUS: RED</strong>
+            <span>High demand across ED and inpatient flow. Prioritise confirmed discharges before 11:00. Escalate blocked beds to NUM.</span>
+        </section>
+
+        <section class="bm-overview-cards ward-summary-strip">
+            <SituationalKpiTile Title="Total Physical Beds" Value="24" Subtitle="All physical beds in this ward." IconName="open-bed-default" ColorClass="kpi-blue" InfoText="All physical beds configured in this ward." IsInfoOpen='@(OpenWardKpiInfo == "Total Physical Beds")' OnInfoClick='() => ToggleWardKpiInfo("Total Physical Beds")' AdditionalClasses="ward-kpi-card" />
+            <SituationalKpiTile Title="Open Beds" Value="20" Subtitle="Open beds refers to beds open for operational use today." IconName="open-bed-green" ColorClass="kpi-green" InfoText="Open beds are beds available for operational use today." IsInfoOpen='@(OpenWardKpiInfo == "Open Beds")' OnInfoClick='() => ToggleWardKpiInfo("Open Beds")' AdditionalClasses="ward-kpi-card" />
+            <SituationalKpiTile Title="Occupied Beds" Value="19" Subtitle="Beds currently occupied by patients." IconName="occupied-bed-default" ColorClass="kpi-gray" InfoText="Beds currently occupied by admitted patients receiving care." IsInfoOpen='@(OpenWardKpiInfo == "Occupied Beds")' OnInfoClick='() => ToggleWardKpiInfo("Occupied Beds")' AdditionalClasses="ward-kpi-card" />
+            <SituationalKpiTile Title="Pending Beds" Value="5" Subtitle="Total Beds Pending" IconName="cleaning-default" ColorClass="kpi-orange" TileType="breakdown" BreakdownItems="@WardPendingBreakdown" InfoText="Beds pending return due to cleaning, maintenance or closure." IsInfoOpen='@(OpenWardKpiInfo == "Pending Beds")' OnInfoClick='() => ToggleWardKpiInfo("Pending Beds")' AdditionalClasses="ward-kpi-card" />
+            <SituationalKpiTile Title="Isolation Beds Available" Value="0" Subtitle="Ward-level isolation capacity available now." IconName="isolation-bed-default" ColorClass="kpi-blue" InfoText="Isolation-enabled beds currently available in this ward." IsInfoOpen='@(OpenWardKpiInfo == "Isolation Beds Available")' OnInfoClick='() => ToggleWardKpiInfo("Isolation Beds Available")' AdditionalClasses="ward-kpi-card" />
+        </section>
+
+        <section class="ward-allocation-highlight">
+            <div class="expected-admissions-box">
+                <p>Expected Admissions</p>
+                <strong>5</strong>
+            </div>
+
+            <div>
+                <h4>Incoming</h4>
+
+                <div class="bm-allocation-tabs">
+                    @foreach (var tab in IncomingTabs)
+                    {
+                        <button type="button" class="@(IncomingTab == tab ? "active" : null)" @onclick="() => IncomingTab = tab">
+                            @tab (@IncomingByTab[tab].Count)
+                        </button>
+                    }
+                </div>
+
+                <div class="bm-cards bm-cards-compact incoming-plan-list">
+                    @foreach (var card in IncomingByTab[IncomingTab])
+                    {
+                        <article class="bm-patient-card bm-patient-card-compact">
+                            <div class="bm-patient-row-top">
+                                <strong>@card.Source · @card.Code</strong>
+                                <span class="bm-priority">@card.Status</span>
+                            </div>
+
+                            <p class="bm-patient-name">@card.Name</p>
+                            <p class="bm-patient-reason">@card.Reason</p>
+
+                            <label class="future-bed-label">
+                                Future bed
+                                <select value="@card.FutureBed" @onchange="(e) => UpdateFutureBed(card, e.Value?.ToString())">
+                                    <option value="">Unallocated</option>
+                                    @for (var i = 1; i <= 24; i++)
+                                    {
+                                        <option value="Bed @i">Bed @i</option>
+                                    }
+                                </select>
+                            </label>
+                        </article>
+                    }
+                </div>
+            </div>
+        </section>
+
+        <section class="bm-ward-table-wrap">
+            <table class="bm-ward-table">
+                <thead>
+                    <tr>
+                        <th>Bed</th>
+                        <th>Status</th>
+                        <th>Patient identifiers</th>
+                        <th>Team</th>
+                        <th>Allergies &amp; Alerts</th>
+                        <th>Referrals</th>
+                        <th>EDD</th>
+                        <th>Discharge progress</th>
+                        <th>Requests &amp; Results</th>
+                        <th>Diet</th>
+                        <th>EWS</th>
+                        <th>Waiting for</th>
+                        <th class="actions-col">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var bed in BedRows)
+                    {
+                        <tr class="state-@bed.StatusClass">
+                            <td><strong>@bed.BedLabel</strong></td>
+
+                            <td>
+                                <div class="bm-status-pill">
+                                    <MudIcon Icon="@StatusIcon(bed.Status)" Size="Size.Small" />
+                                    @bed.Status
+                                </div>
+                            </td>
+
+                            <td>
+                                @if (bed.HasPatient)
+                                {
+                                    <div class="bm-bed-patient">@bed.PatientName</div>
+                                    <small>@bed.Demographics</small>
+                                }
+                                else
+                                {
+                                    <strong>—</strong>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(bed.FutureAllocation))
+                                {
+                                    <div class="future-allocation-chip">Planned next: @bed.FutureAllocation</div>
+                                }
+                            </td>
+
+                            <td>@bed.Team</td>
+                            <td>@bed.Allergies</td>
+                            <td>@bed.Referral</td>
+                            <td>@bed.Edd</td>
+
+                            <td>
+                                <div class="progress">
+                                    <span style="@($"width:{bed.DischargeProgress}%")"></span>
+                                </div>
+                                @bed.DischargeProgress%
+                            </td>
+
+                            <td>@bed.Requests</td>
+                            <td>@bed.Diet</td>
+                            <td>@bed.Ews</td>
+                            <td>@bed.WaitingFor</td>
+
+                            <td>
+                                <div class="bm-inline-actions compact-actions">
+                                    <button type="button" title="View">
+                                        <MudIcon Icon="@Icons.Material.Outlined.Visibility" Size="Size.Small" />
+                                    </button>
+                                    <button type="button" title="Note">
+                                        <MudIcon Icon="@Icons.Material.Outlined.StickyNote2" Size="Size.Small" />
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <footer>Showing 1–24 of 24 beds</footer>
+        </section>
+    }
+    else
+    {
+        <section class="bm-capacity-banner red">
+            <strong>HOSPITAL CAPACITY STATUS: RED</strong>
+            <span>Interactive ward workflow: drag incoming cards to ready beds, and drag beds to quick actions.</span>
+        </section>
+
+        <div class="bm-main-grid">
+            <section class="bm-list-panel">
+                <section class="bm-ward-table-wrap">
+                    <table class="bm-ward-table">
+                        <thead>
+                            <tr>
+                                <th>Bed</th>
+                                <th>Status</th>
+                                <th>Patient</th>
+                                <th>Team</th>
+                                <th>EDD</th>
+                                <th>Waiting For</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var bed in V2BedRows.Take(10))
+                            {
+                                <tr class="state-@bed.StatusClass"
+                                    draggable="true"
+                                    @ondragstart="() => StartDragBedForAction(bed)"
+                                    @ondragover="AllowDrop"
+                                    @ondragover:preventDefault="true"
+                                    @ondrop="() => DropPatientToBed(bed)">
+                                    <td><strong>@bed.BedLabel</strong></td>
+
+                                    <td>
+                                        <div class="bm-status-pill">
+                                            <MudIcon Icon="@StatusIcon(bed.Status)" Size="Size.Small" />
+                                            @bed.Status
+                                        </div>
+                                    </td>
+
+                                    <td>@(bed.HasPatient ? bed.PatientName : "—")</td>
+                                    <td>@bed.Team</td>
+                                    <td>@bed.Edd</td>
+                                    <td>@bed.WaitingFor</td>
+
+                                    <td>
+                                        <div class="bm-inline-actions">
+                                            @foreach (var action in V2ActionDefs)
+                                            {
+                                                <button type="button" title="@action.Label" @onclick="() => ApplyBedAction(bed, action.Key)">
+                                                    <MudIcon Icon="@action.Icon" Size="Size.Small" />
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </section>
+            </section>
+
+            <aside class="bm-right-panel">
+                <article>
+                    <h4>Incoming</h4>
+
+                    <div class="bm-allocation-tabs">
+                        @foreach (var tab in V2IncomingTabs)
+                        {
+                            <button type="button" class="@(V2IncomingTab == tab ? "active" : null)" @onclick="() => V2IncomingTab = tab">
+                                @tab (@V2IncomingByTab[tab].Count)
+                            </button>
+                        }
+                    </div>
+
+                    <div class="bm-cards bm-cards-compact">
+                        @foreach (var card in V2IncomingByTab[V2IncomingTab].Take(4))
+                        {
+                            <article class="bm-patient-card bm-patient-card-compact" draggable="true" @ondragstart="() => StartDragFromIncoming(card)">
+                                <div class="bm-patient-row-top">
+                                    <strong>@card.Code · @card.Meta</strong>
+                                    <span class="bm-priority">@card.Priority</span>
+                                </div>
+                                <p class="bm-patient-name">@card.Name</p>
+                                <p class="bm-patient-reason">@card.Reason</p>
+                            </article>
+                        }
+                    </div>
+                </article>
+
+                <article>
+                    <h4>Quick Actions</h4>
+
+                    <div class="bm-actions">
+                        @foreach (var action in V2ActionDefs)
+                        {
+                            <button type="button"
+                                    class="qa-drop @(_hoverAction == action.Key ? "hover" : null)"
+                                    @ondragover="() => HoverAction(action.Key)"
+                                    @ondragover:preventDefault="true"
+                                    @ondragleave="() => _hoverAction = null"
+                                    @ondrop="() => DropBedToAction(action.Key)">
+                                <MudIcon Icon="@action.Icon" Size="Size.Small" />
+                                @action.Label
+                            </button>
+                        }
+                    </div>
+                </article>
+
+                <article>
+                    <h4>Drop Zones</h4>
+
+                    <div class="bm-targets">
+                        @foreach (var target in V2MoveTargets)
+                        {
+                            <div class="bm-move-target"
+                                 @ondragover="AllowDrop"
+                                 @ondragover:preventDefault="true"
+                                 @ondrop="() => DropBedToTarget(target)">
+                                @target
+                            </div>
+                        }
+                    </div>
+                </article>
+
+                <article>
+                    <h4>Recent Activity</h4>
+
+                    <ul class="bm-activity">
+                        @foreach (var item in V2Activity.Take(4))
+                        {
+                            <li>@item</li>
+                        }
+                    </ul>
+                </article>
+            </aside>
+        </div>
+    }
+</section>
+
+@code {
+    private string WardVersion { get; set; } = "V1";
+    private string IncomingTab { get; set; } = "ED";
+    private string V2IncomingTab { get; set; } = "ED";
+    private string? OpenWardKpiInfo { get; set; }
+
+    private string? _hoverAction;
+    private string _dragMode = string.Empty;
+    private IncomingCard? _draggedIncoming;
+    private BedRow? _draggedBed;
+
+    private static readonly string[] IncomingTabs = { "ED", "IHT", "Add On", "Ward Transfer" };
+    private static readonly string[] V2IncomingTabs = { "ED", "IHT", "OPD", "Other" };
+
+    private readonly Dictionary<string, List<IncomingCard>> IncomingByTab = new()
+    {
+        ["ED"] = new(),
+        ["IHT"] = new(),
+        ["Add On"] = new(),
+        ["Ward Transfer"] = new()
+    };
+
+    private readonly Dictionary<string, List<IncomingCard>> V2IncomingByTab = new()
+    {
+        ["ED"] = new(),
+        ["IHT"] = new(),
+        ["OPD"] = new(),
+        ["Other"] = new()
+    };
+
+    private readonly List<string> V2MoveTargets = new()
+    {
+        "IHT Returns Queue",
+        "Pending Transfer",
+        "Temporary Hold",
+        "Discharge Pending"
+    };
+
+    private readonly List<string> V2Activity = new()
+    {
+        "12:20 Bed 3 marked Cleaning",
+        "12:25 Bed 3 marked Ready",
+        "12:26 Bed 4 blocked due to adjacent behaviour risk",
+        "12:27 Maintenance requested for Bed 8"
+    };
+
+    private readonly (string Key, string Label, string Icon)[] V2ActionDefs =
+    {
+        ("ready", "Mark Ready", Icons.Material.Outlined.CheckCircle),
+        ("cleaning", "Mark Cleaning", Icons.Material.Outlined.CleaningServices),
+        ("block", "Block Bed", Icons.Material.Outlined.Lock),
+        ("maintenance", "Request Maintenance", Icons.Material.Outlined.Handyman),
+        ("isolation", "Mark As Isolation", Icons.Material.Outlined.Shield),
+        ("note", "Add Operational Note", Icons.Material.Outlined.StickyNote2)
+    };
+
+    private List<BedRow> BedRows = new();
+    private List<BedRow> V2BedRows = new();
+    private static readonly IReadOnlyList<SituationalKpiTile.KpiBreakdownItem> WardPendingBreakdown = new[]
+    {
+        new SituationalKpiTile.KpiBreakdownItem("Cleaning", "1"),
+        new SituationalKpiTile.KpiBreakdownItem("Maintenance", "1"),
+        new SituationalKpiTile.KpiBreakdownItem("Closed", "3")
+    };
+
+    private void ToggleWardKpiInfo(string title) => OpenWardKpiInfo = OpenWardKpiInfo == title ? null : title;
+    private void CloseKpiInfo() => OpenWardKpiInfo = null;
+
+    protected override void OnInitialized()
+    {
+        BedRows = Enumerable.Range(1, 24).Select(CreateBed).ToList();
+
+        IncomingByTab["ED"] = new()
+        {
+            new IncomingCard("ED001", "DEMO-PAT-ED-01", "Awaiting ward bed", "ED", "Future bed: Bed 5", "Bed 5"),
+            new IncomingCard("ED002", "DEMO-PAT-ED-02", "Awaiting ward bed", "ED", "Future bed: Bed 11", "Bed 11"),
+            new IncomingCard("ED003", "DEMO-PAT-ED-03", "Awaiting ward bed", "ED", "Future bed: Bed 19", "Bed 19")
+        };
+
+        IncomingByTab["IHT"] = new()
+        {
+            new IncomingCard("IHT001", "DEMO-PAT-IHT-01", "Awaiting ward bed", "IHT", "Future bed: Unallocated", "")
+        };
+
+        IncomingByTab["Add On"] = new()
+        {
+            new IncomingCard("ADD001", "DEMO-PAT-ADD-01", "Awaiting ward bed", "Add On", "Future bed: Unallocated", "")
+        };
+
+        IncomingByTab["Ward Transfer"] = new();
+
+        ReconcileFutureAllocations();
+
+        var feed = QHPFH_ConceptPrototype.Data.DemoHubData.BuildPatientAdmissions();
+        V2BedRows = Enumerable.Range(1, 48).Select(n => CreateV2Bed(n, feed)).ToList();
+
+        V2IncomingByTab["ED"] = feed.Take(4)
+            .Select((p, i) => new IncomingCard(
+                $"ED{i + 1:000}",
+                $"{p.LastName.ToUpperInvariant()}, {p.FirstName}",
+                "Emergency admission",
+                "ED",
+                $"{DateTime.Now.AddMinutes(20 + i * 10):HH:mm}",
+                i == 0 ? "High" : "Medium"))
+            .ToList();
+
+        V2IncomingByTab["IHT"] = feed.Skip(20).Take(2)
+            .Select((p, i) => new IncomingCard(
+                $"IHT{i + 1:000}",
+                $"{p.LastName.ToUpperInvariant()}, {p.FirstName}",
+                "Inter-hospital transfer",
+                "IHT",
+                $"{DateTime.Now.AddMinutes(35 + i * 10):HH:mm}",
+                "Medium"))
+            .ToList();
+
+        V2IncomingByTab["OPD"] = feed.Skip(40).Take(1)
+            .Select((p, i) => new IncomingCard(
+                $"OPD{i + 1:000}",
+                $"{p.LastName.ToUpperInvariant()}, {p.FirstName}",
+                "Post procedure",
+                "OPD",
+                $"{DateTime.Now.AddMinutes(55):HH:mm}",
+                "Low"))
+            .ToList();
+    }
+
+    private void UpdateFutureBed(IncomingCard card, string? value)
+    {
+        card.FutureBed = value ?? string.Empty;
+        card.FutureBedLabel = string.IsNullOrWhiteSpace(card.FutureBed)
+            ? "Future bed: Unallocated"
+            : $"Future bed: {card.FutureBed}";
+
+        ReconcileFutureAllocations();
+    }
+
+    private void ReconcileFutureAllocations()
+    {
+        foreach (var bed in BedRows)
+        {
+            bed.FutureAllocation = string.Empty;
+        }
+
+        foreach (var incoming in IncomingByTab.SelectMany(x => x.Value).Where(x => !string.IsNullOrWhiteSpace(x.FutureBed)))
+        {
+            var bed = BedRows.FirstOrDefault(b => b.BedLabel == incoming.FutureBed);
+
+            if (bed is not null)
+            {
+                bed.FutureAllocation = $"{incoming.Source} patient arriving";
+            }
+        }
+    }
+
+    private static BedRow CreateBed(int n)
+    {
+        if (n == 20)
+        {
+            return new("Bed 20", "Open / Ready", string.Empty, string.Empty, "General Surgery", "—", "ED", "27 May", 0, "—", "Regular", 0, "Available");
+        }
+
+        if (n == 21)
+        {
+            return new("Bed 21", "Cleaning", string.Empty, string.Empty, "General Surgery", "—", "Ward", "—", 0, "Housekeeping", "—", 0, "Awaiting clean");
+        }
+
+        if (n == 22)
+        {
+            return new("Bed 22", "Maintenance", string.Empty, string.Empty, "General Surgery", "—", "Ward", "—", 0, "Engineering", "—", 0, "Maintenance review");
+        }
+
+        if (n == 23 || n == 24)
+        {
+            return new($"Bed {n}", "Closed", string.Empty, string.Empty, "General Surgery", "—", "Ward", "—", 0, "—", "—", 0, "Closed operationally");
+        }
+
+        var ews = (n % 5) + 1;
+
+        var fictionalNames = new[]
+        {
+            "Clark Kent","Diana Prince","Bruce Wayne","Peter Parker","Natasha Romanoff","Tony Stark","Leia Organa","Ellen Ripley",
+            "Sarah Connor","Marty McFly","Wanda Maximoff","Jean Grey","Hermione Granger","Indiana Jones","Dana Scully","Neo Anderson",
+            "Katniss Everdeen","Bruce Banner","Selina Kyle","Luke Skywalker","Arthur Curry","Logan Howlett","Barry Allen","Padme Amidala"
+        };
+        var patientName = fictionalNames[(n - 1) % fictionalNames.Length];
+
+        return new(
+            $"Bed {n}",
+            "Occupied",
+            patientName,
+            $"MRN DEMO{n:000} | {(30 + n % 35)}y | {(n % 2 == 0 ? "F" : "M")}",
+            "General Surgery",
+            n % 4 == 0 ? "Penicillin" : "NKA",
+            n % 3 == 0 ? "IHT" : "ED",
+            "26 May",
+            20 + (n * 3 % 75),
+            "Bloods pending",
+            n % 2 == 0 ? "Diabetic" : "Regular",
+            ews,
+            "Clinical review");
+    }
+
+    private static void AllowDrop(DragEventArgs _)
+    {
+    }
+
+    private void HoverAction(string key)
+    {
+        _hoverAction = key;
+    }
+
+    private void StartDragFromIncoming(IncomingCard card)
+    {
+        _dragMode = "incoming";
+        _draggedIncoming = card;
+        _draggedBed = null;
+    }
+
+    private void StartDragBedForAction(BedRow bed)
+    {
+        _dragMode = "bed";
+        _draggedBed = bed;
+        _draggedIncoming = null;
+    }
+
+    private void DropPatientToBed(BedRow bed)
+    {
+        if (_dragMode != "incoming" || _draggedIncoming is null)
+        {
+            return;
+        }
+
+        if (bed.Status != "Open / Ready")
+        {
+            return;
+        }
+
+        bed.Assign(_draggedIncoming);
+
+        foreach (var list in V2IncomingByTab.Values)
+        {
+            list.Remove(_draggedIncoming);
+        }
+
+        V2Activity.Insert(0, $"{DateTime.Now:HH:mm} {_draggedIncoming.Code} assigned to {bed.BedLabel}");
+
+        _draggedIncoming = null;
+        _dragMode = string.Empty;
+    }
+
+    private void DropBedToAction(string key)
+    {
+        if (_dragMode != "bed" || _draggedBed is null)
+        {
+            return;
+        }
+
+        ApplyBedAction(_draggedBed, key);
+
+        _draggedBed = null;
+        _dragMode = string.Empty;
+        _hoverAction = null;
+    }
+
+    private void DropBedToTarget(string target)
+    {
+        if (_draggedBed is null || !_draggedBed.HasPatient)
+        {
+            return;
+        }
+
+        V2IncomingByTab["IHT"].Add(new IncomingCard(
+            "IHT-R",
+            _draggedBed.PatientName,
+            _draggedBed.Team,
+            "From ward",
+            target,
+            "Medium"));
+
+        V2Activity.Insert(0, $"{DateTime.Now:HH:mm} {_draggedBed.BedLabel} moved to {target}");
+
+        _draggedBed.MarkCleaning();
+
+        _draggedBed = null;
+        _dragMode = string.Empty;
+    }
+
+    private void ApplyBedAction(BedRow bed, string key)
+    {
+        switch (key)
+        {
+            case "ready":
+                bed.Status = "Open / Ready";
+                bed.WaitingFor = "Available";
+                if (!bed.HasPatient)
+                {
+                    bed.ClearPatient();
+                }
+                V2Activity.Insert(0, $"{DateTime.Now:HH:mm} {bed.BedLabel} marked Ready");
+                break;
+
+            case "cleaning":
+                bed.MarkCleaning();
+                V2Activity.Insert(0, $"{DateTime.Now:HH:mm} {bed.BedLabel} marked Cleaning");
+                break;
+
+            case "block":
+                bed.Status = "Blocked";
+                bed.WaitingFor = "NUM hold";
+                V2Activity.Insert(0, $"{DateTime.Now:HH:mm} {bed.BedLabel} blocked");
+                break;
+
+            case "maintenance":
+                bed.Status = "Maintenance";
+                bed.WaitingFor = "Maintenance review";
+                V2Activity.Insert(0, $"{DateTime.Now:HH:mm} Maintenance requested for {bed.BedLabel}");
+                break;
+
+            case "isolation":
+                bed.Status = "Isolation / Specialist";
+                bed.WaitingFor = "Isolation review";
+                V2Activity.Insert(0, $"{DateTime.Now:HH:mm} {bed.BedLabel} marked Isolation / Specialist");
+                break;
+
+            case "note":
+                V2Activity.Insert(0, $"{DateTime.Now:HH:mm} Operational note added for {bed.BedLabel}");
+                break;
+        }
+    }
+
+    private static BedRow CreateV2Bed(int n, IReadOnlyList<QHPFH_ConceptPrototype.Models.PatientAdmission> feed)
+    {
+        if (n == 8)
+        {
+            return new($"Bed {n}", "Maintenance", string.Empty, string.Empty, "-", "-", "Ward", "-", 0, "-", "-", 0, "Maintenance review");
+        }
+
+        if (n == 9)
+        {
+            return new($"Bed {n}", "Blocked", string.Empty, string.Empty, "-", "-", "Ward", "-", 0, "-", "-", 0, "NUM hold");
+        }
+
+        var status = n % 7 == 0 ? "Open / Ready" : n % 6 == 0 ? "Cleaning" : "Occupied";
+        var patient = feed[(n * 3) % feed.Count];
+        var patientName = status == "Occupied" ? $"{patient.LastName.ToUpperInvariant()}, {patient.FirstName}" : string.Empty;
+        var demographics = status == "Occupied" ? $"MRN DEMO{n:000} | {patient.Age}y | {patient.Sex}" : string.Empty;
+
+        return new(
+            $"Bed {n}",
+            status,
+            patientName,
+            demographics,
+            "General Surgery",
+            status == "Occupied" ? "None" : "-",
+            "ED",
+            "26 May",
+            status == "Occupied" ? 30 : 0,
+            status == "Occupied" ? "Results pending" : "-",
+            "Regular",
+            status == "Occupied" ? 2 : 0,
+            status == "Open / Ready" ? "Available" : status == "Cleaning" ? "Awaiting cleaning" : "Clinical review");
+    }
+
+    private static string StatusIcon(string status)
+    {
+        return status switch
+        {
+            "Occupied" => Icons.Material.Outlined.Person,
+            "Open / Ready" => Icons.Material.Outlined.CheckCircle,
+            "Cleaning" => Icons.Material.Outlined.CleaningServices,
+            "Closed" => Icons.Material.Outlined.Lock,
+            "Blocked" => Icons.Material.Outlined.Lock,
+            "Maintenance" => Icons.Material.Outlined.Handyman,
+            "Isolation / Specialist" => Icons.Material.Outlined.Shield,
+            _ => Icons.Material.Outlined.Bed
+        };
+    }
+
+    private sealed class IncomingCard
+    {
+        public IncomingCard(string code, string name, string status, string source, string meta, string priority)
+        {
+            Code = code;
+            Name = name;
+            Status = status;
+            Source = source;
+            FutureBedLabel = meta;
+            FutureBed = meta.StartsWith("Bed ", StringComparison.OrdinalIgnoreCase) ? meta : string.Empty;
+            Meta = meta;
+            Priority = priority;
+            Reason = status;
+        }
+
+        public string Code { get; }
+        public string Name { get; }
+        public string Status { get; }
+        public string Source { get; }
+        public string Reason { get; }
+        public string FutureBedLabel { get; set; }
+        public string FutureBed { get; set; }
+        public string Meta { get; set; }
+        public string Priority { get; set; }
+    }
+
+    private sealed class BedRow
+    {
+        public BedRow(
+            string bedLabel,
+            string status,
+            string patientName,
+            string demographics,
+            string team,
+            string allergies,
+            string referral,
+            string edd,
+            int dischargeProgress,
+            string requests,
+            string diet,
+            int ews,
+            string waitingFor)
+        {
+            BedLabel = bedLabel;
+            Status = status;
+            PatientName = patientName;
+            Demographics = demographics;
+            Team = team;
+            Allergies = allergies;
+            Referral = referral;
+            Edd = edd;
+            DischargeProgress = dischargeProgress;
+            Requests = requests;
+            Diet = diet;
+            Ews = ews;
+            WaitingFor = waitingFor;
+        }
+
+        public string BedLabel { get; }
+        public string Status { get; set; }
+        public string PatientName { get; set; }
+        public string Demographics { get; set; }
+        public string Team { get; set; }
+        public string Allergies { get; set; }
+        public string Referral { get; set; }
+        public string Edd { get; set; }
+        public int DischargeProgress { get; set; }
+        public string Requests { get; set; }
+        public string Diet { get; set; }
+        public int Ews { get; set; }
+        public string WaitingFor { get; set; }
+        public string FutureAllocation { get; set; } = string.Empty;
+
+        public bool HasPatient => !string.IsNullOrWhiteSpace(PatientName);
+
+        public string StatusClass => Status
+            .ToLowerInvariant()
+            .Replace(" / ", "-")
+            .Replace(" ", "-");
+
+        public void Assign(IncomingCard card)
+        {
+            Status = "Occupied";
+            PatientName = card.Name;
+            Demographics = $"MRN {card.Code} | incoming";
+            Referral = card.Source;
+            Edd = "TBC";
+            Requests = card.Reason;
+            Diet = "Regular";
+            Ews = 1;
+            WaitingFor = "Admission review";
+            DischargeProgress = 0;
+            FutureAllocation = string.Empty;
+        }
+
+        public void MarkCleaning()
+        {
+            Status = "Cleaning";
+            ClearPatient();
+            WaitingFor = "Awaiting cleaning";
+            Requests = "Housekeeping";
+            Referral = "Ward";
+        }
+
+        public void ClearPatient()
+        {
+            PatientName = string.Empty;
+            Demographics = string.Empty;
+            Allergies = "—";
+            Referral = "Ward";
+            Edd = "—";
+            DischargeProgress = 0;
+            Requests = "—";
+            Diet = "—";
+            Ews = 0;
+            FutureAllocation = string.Empty;
+        }
+    }
+}

@@ -1,0 +1,131 @@
+@using QHPFH_ConceptPrototype.Components.BedManagement.Shared
+
+<section class="bm-reset-controls" aria-label="Bed Management view controls">
+    <div class="bm-reset-control bm-reset-control--level">
+        <label for="bm-level">Level</label>
+        <select id="bm-level" value="@SelectedLevel" @onchange="HandleLevelChanged">
+            @foreach (var option in LevelOptions)
+            {
+                <option value="@option.Value">@option.Label</option>
+            }
+        </select>
+    </div>
+
+    <div class="bm-reset-control bm-reset-control--version">
+        <label for="bm-version">Version</label>
+        <select id="bm-version" value="@SelectedVersion" @onchange="HandleVersionChanged">
+            @foreach (var option in VersionOptions)
+            {
+                <option value="@option.Value">@option.Label</option>
+            }
+        </select>
+    </div>
+
+    @if (ShowHhs)
+    {
+        <div class="bm-reset-control">
+            <label for="bm-hhs">HHS</label>
+            <select id="bm-hhs" value="@SelectedHhs" @onchange="HandleHhsChanged">
+                @foreach (var hhs in HhsOptions)
+                {
+                    <option value="@hhs.Value">@hhs.Label</option>
+                }
+            </select>
+        </div>
+    }
+
+    @if (ShowFacility)
+    {
+        <div class="bm-reset-control">
+            <label for="bm-facility">Facility</label>
+            <select id="bm-facility" value="@SelectedFacility" @onchange="HandleFacilityChanged">
+                @foreach (var facility in FacilityOptions)
+                {
+                    <option value="@facility.Value">@facility.Label</option>
+                }
+            </select>
+        </div>
+    }
+
+    @if (ShowWard)
+    {
+        <div class="bm-reset-control">
+            <label for="bm-ward">Ward</label>
+            <select id="bm-ward" value="@SelectedWard" @onchange="HandleWardChanged">
+                @foreach (var ward in WardOptions)
+                {
+                    <option value="@ward.Value">@ward.Label</option>
+                }
+            </select>
+        </div>
+    }
+    else if (ShowAllWardsReadout)
+    {
+        <div class="bm-reset-control bm-reset-control--readonly">
+            <span class="bm-reset-readonly-label">Ward</span>
+            <span class="bm-reset-readonly-value">All Wards</span>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter] public BedManagementLevel SelectedLevel { get; set; }
+    [Parameter] public BedManagementVersion SelectedVersion { get; set; }
+    [Parameter] public string SelectedHhs { get; set; } = string.Empty;
+    [Parameter] public string SelectedFacility { get; set; } = string.Empty;
+    [Parameter] public string SelectedWard { get; set; } = string.Empty;
+    [Parameter] public IReadOnlyList<BedManagementOption> HhsOptions { get; set; } = [];
+    [Parameter] public IReadOnlyList<BedManagementOption> FacilityOptions { get; set; } = [];
+    [Parameter] public IReadOnlyList<BedManagementOption> WardOptions { get; set; } = [];
+    [Parameter] public EventCallback<BedManagementLevel> SelectedLevelChanged { get; set; }
+    [Parameter] public EventCallback<BedManagementVersion> SelectedVersionChanged { get; set; }
+    [Parameter] public EventCallback<string> SelectedHhsChanged { get; set; }
+    [Parameter] public EventCallback<string> SelectedFacilityChanged { get; set; }
+    [Parameter] public EventCallback<string> SelectedWardChanged { get; set; }
+
+    private static readonly BedManagementOption[] LevelOptions =
+    [
+        new(nameof(BedManagementLevel.Statewide), "Statewide"),
+        new(nameof(BedManagementLevel.Hhs), "HHS"),
+        new(nameof(BedManagementLevel.Facility), "Facility"),
+        new(nameof(BedManagementLevel.Ward), "Ward")
+    ];
+
+    private static readonly BedManagementOption[] VersionOptions =
+    [
+        new(nameof(BedManagementVersion.V1DataInsights), "V1 Data & Insights"),
+        new(nameof(BedManagementVersion.V2Balanced), "V2 Balanced"),
+        new(nameof(BedManagementVersion.V3Operational), "V3 Operational")
+    ];
+
+    private bool ShowHhs => SelectedLevel is BedManagementLevel.Hhs or BedManagementLevel.Facility or BedManagementLevel.Ward;
+    private bool ShowFacility => SelectedLevel is BedManagementLevel.Facility or BedManagementLevel.Ward;
+    private bool ShowWard => SelectedLevel is BedManagementLevel.Ward;
+    private bool ShowAllWardsReadout => SelectedLevel is BedManagementLevel.Facility;
+
+    private Task HandleLevelChanged(ChangeEventArgs args)
+    {
+        if (Enum.TryParse<BedManagementLevel>(args.Value?.ToString(), out var level))
+        {
+            return SelectedLevelChanged.InvokeAsync(level);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task HandleVersionChanged(ChangeEventArgs args)
+    {
+        if (Enum.TryParse<BedManagementVersion>(args.Value?.ToString(), out var version))
+        {
+            return SelectedVersionChanged.InvokeAsync(version);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task HandleHhsChanged(ChangeEventArgs args) => SelectedHhsChanged.InvokeAsync(args.Value?.ToString() ?? string.Empty);
+
+    private Task HandleFacilityChanged(ChangeEventArgs args) => SelectedFacilityChanged.InvokeAsync(args.Value?.ToString() ?? string.Empty);
+
+    private Task HandleWardChanged(ChangeEventArgs args) => SelectedWardChanged.InvokeAsync(args.Value?.ToString() ?? string.Empty);
+}

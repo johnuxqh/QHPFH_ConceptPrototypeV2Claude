@@ -1,0 +1,11 @@
+<section class="bm-shared-banner bm-tone-@Tone.ToLowerInvariant()" aria-label="Patient journey context">
+    <div><span>Patient journey context</span><strong>@Snapshot.Label</strong></div>
+    <p>@(string.IsNullOrWhiteSpace(Message) ? $"{Snapshot.OccupancyPercentage}% occupied · {Snapshot.AvailableBeds} available · {Snapshot.LastUpdatedLabel}" : Message)</p>
+    <span class="bm-shared-status">@Snapshot.EscalationStatus</span>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public CapacitySnapshot Snapshot { get; set; } = default!;
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public string Tone { get; set; } = "Info";
+}

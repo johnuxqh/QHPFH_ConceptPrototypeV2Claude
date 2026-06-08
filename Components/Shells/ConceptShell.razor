@@ -1,0 +1,23 @@
+<div class="concept-shell">
+    <HeaderShell IsDarkMode="IsDarkMode" OnToggleTheme="OnToggleTheme" IsConceptNavCompact="IsConceptNavCompact" OnToggleConceptNavCompact="OnToggleConceptNavCompact">
+        <HeaderContent>
+            <ShellModeToggle Mode="CurrentShellMode" OnModeChanged="OnShellModeChanged" />
+        </HeaderContent>
+    </HeaderShell>
+
+    <MainContentShell>
+        @ChildContent
+    </MainContentShell>
+
+    <BottomUtilityNavigation IsDarkMode="IsDarkMode" />
+</div>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public bool IsDarkMode { get; set; }
+    [Parameter] public EventCallback OnToggleTheme { get; set; }
+    [Parameter] public ShellMode CurrentShellMode { get; set; }
+    [Parameter] public EventCallback<ShellMode> OnShellModeChanged { get; set; }
+    [Parameter] public bool IsConceptNavCompact { get; set; }
+    [Parameter] public EventCallback OnToggleConceptNavCompact { get; set; }
+}

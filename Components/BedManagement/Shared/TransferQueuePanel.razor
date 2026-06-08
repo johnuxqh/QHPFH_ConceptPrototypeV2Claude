@@ -1,0 +1,8 @@
+<section class="bm-shared-panel" aria-label="Transfer delays and queue">
+    <header><h3>Transfer delays and queue</h3><span>@Queue.Count items</span></header>
+    <div class="bm-shared-list">
+        @foreach (var bed in Queue.Take(5)) { <div><span class="bm-shared-status">@bed.Transfer?.Status</span><p><strong>@bed.Label</strong> · @bed.Transfer?.Direction to @bed.Transfer?.TargetWard</p><small>@bed.Transfer?.RequestedTime · @bed.NextExpectedAction</small></div> }
+        @if (Queue.Count == 0) { <p class="bm-shared-empty">No transfer barriers currently require resolution.</p> }
+    </div>
+</section>
+@code { [Parameter] public IEnumerable<Bed> Beds { get; set; } = []; private IReadOnlyList<Bed> Queue => Beds.Where(bed => bed.Transfer is not null || bed.Status == BedStatus.PendingTransfer).ToArray(); }

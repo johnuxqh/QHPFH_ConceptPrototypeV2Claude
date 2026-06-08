@@ -1,0 +1,21 @@
+@using QHPFH_ConceptPrototype.Components.BedManagement.Shared
+
+<section class="bm-v1-view bm-v1-view--hhs" aria-label="HHS V1 awareness view">
+    <OperationalBanner Snapshot="@Snapshot" Message="@($"Regional awareness: identify facilities requiring support and the major flow issues across {Hhs.Name}.")" Tone="Awareness" />
+    <div class="bm-v1-awareness-grid">
+        <div class="bm-v1-emphasis-table"><PerformanceTable Title="Facility pressure and support needs" Rows="@FacilityRows" /></div>
+        <InsightCardGrid Signals="@Hhs.Signals" Version="@BedManagementVersion.V2Balanced" ContextLabel="V1 awareness" />
+    </div>
+    <MetricTileRow Snapshot="@Snapshot" AwarenessMode="true" />
+</section>
+
+@code {
+    [Parameter, EditorRequired] public HhsNetwork Hhs { get; set; } = default!;
+    private CapacitySnapshot Snapshot => BedManagementDemoData.GetHhsSnapshot(Hhs.Id)!;
+    private IReadOnlyList<PerformanceRow> FacilityRows => Hhs.Facilities.Select(facility =>
+    {
+        var snapshot = BedManagementDemoData.GetFacilitySnapshot(facility.Id)!;
+        var support = facility.EscalationStatus == "BAU" ? "Monitor" : "Support required";
+        return new PerformanceRow(facility.ShortName, $"{snapshot.OccupancyPercentage}%", facility.EscalationStatus, $"{support} · ED {facility.EdPressureIndicator} · discharge {facility.DischargePressureIndicator} · transfer {facility.TransferPressureIndicator}");
+    }).OrderBy(row => row.Status == "BAU").ToArray();
+}

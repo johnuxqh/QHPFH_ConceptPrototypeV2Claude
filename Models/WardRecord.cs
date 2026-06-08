@@ -1,0 +1,26 @@
+namespace QHPFH_ConceptPrototype.Models;
+
+public sealed record WardRecord(
+    string Hhs,
+    string Facility,
+    string WardCode,
+    string WardName,
+    string WardDescription,
+    string WardType,
+    int PhysicalBeds,
+    int OpenBeds,
+    int OccupiedBeds,
+    int AvailableBeds,
+    decimal OccupancyPercent,
+    string PressureStatus,
+    string BedReductionReason,
+    int ElectiveAdmissionsToday,
+    int EdAddOnsToday,
+    int HithReturnsToday,
+    int PredictedDischargesToday,
+    int ActualDischargesToday,
+    int DelayedDischargeCount,
+    int CleaningAwaiting,
+    int NonOperationalBeds,
+    int CapacityDelta24h,
+    string LastUpdated);

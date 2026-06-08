@@ -1,0 +1,28 @@
+<section class="bm-shared-metrics @(AwarenessMode ? "bm-shared-metrics--awareness" : null)" aria-label="Capacity metrics">
+    @foreach (var metric in Metrics)
+    {
+        <div class="bm-shared-metric"><span>@metric.Label</span><strong>@metric.Value</strong></div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public CapacitySnapshot Snapshot { get; set; } = default!;
+    [Parameter] public bool AwarenessMode { get; set; }
+
+    private IEnumerable<(string Label, string Value)> Metrics => AwarenessMode
+        ?
+        [
+            ("Occupancy", $"{Snapshot.OccupancyPercentage}%"),
+            ("Available capacity", Snapshot.AvailableBeds.ToString()),
+            ("Expected admissions", Snapshot.ExpectedAdmissions.ToString()),
+            ("Discharge opportunity", Snapshot.PlannedDischarges.ToString()),
+            ("Transfer concerns", Snapshot.TransferRequests.ToString())
+        ]
+        :
+        [
+            ("Physical beds", Snapshot.PhysicalBeds.ToString()), ("Open beds", Snapshot.OpenBeds.ToString()),
+            ("Occupied", Snapshot.OccupiedBeds.ToString()), ("Available", Snapshot.AvailableBeds.ToString()),
+            ("Pending cleaning", Snapshot.PendingCleaning.ToString()), ("Maintenance", Snapshot.PendingMaintenance.ToString()),
+            ("Closed", Snapshot.ClosedBeds.ToString()), ("Occupancy", $"{Snapshot.OccupancyPercentage}%")
+        ];
+}

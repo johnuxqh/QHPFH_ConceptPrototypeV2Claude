@@ -1,0 +1,5 @@
+<section class="bm-shared-panel bm-shared-compact" aria-label="Flow opportunities">
+    <header><h3>Flow opportunities</h3></header>
+    <div class="bm-shared-swimlanes"><div><span>Admission pressure</span><strong>@Snapshot.ExpectedAdmissions</strong></div><div><span>Available capacity</span><strong>@Snapshot.AvailableBeds</strong></div><div><span>Transfer requests</span><strong>@Snapshot.TransferRequests</strong></div></div>
+</section>
+@code { [Parameter, EditorRequired] public CapacitySnapshot Snapshot { get; set; } = default!; }

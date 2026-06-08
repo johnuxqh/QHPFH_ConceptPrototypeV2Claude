@@ -1,0 +1,8 @@
+<section class="bm-shared-panel bm-shared-panel--priority" aria-label="Decisions and next actions">
+    <header><h3>Decisions and next actions</h3><span>@Signals.Count requiring attention</span></header>
+    <div class="bm-shared-list">
+        @foreach (var item in Signals.Take(5)) { <div><span class="bm-shared-status">@item.Severity</span><p><strong>@item.Label</strong> · @item.Detail</p><small>@item.Owner · @item.DueLabel</small></div> }
+        @if (Signals.Count == 0) { <p class="bm-shared-empty">No priority intervention is currently required.</p> }
+    </div>
+</section>
+@code { [Parameter] public IReadOnlyList<OperationalSignal> Signals { get; set; } = []; }

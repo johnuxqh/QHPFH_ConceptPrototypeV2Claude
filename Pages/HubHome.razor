@@ -1,0 +1,62 @@
+@inject QHPFH_ConceptPrototype.Components.Shells.NavigationState NavigationState
+@page "/"
+@implements IDisposable
+
+@if (IsHomePage)
+{
+    <ConceptHomeLanding />
+}
+else if (IsBedAndWardHubPage)
+{
+    <BedWardHub />
+}
+else if (IsBedManagementPage)
+{
+    <BedManagement />
+}
+else if (IsWardOperationsPage)
+{
+    <WardOperations />
+}
+else if (IsAllocationCentrePage)
+{
+    <AllocationCentre />
+}
+else
+{
+    <section class="page-shell-card" style="padding:24px;">
+        <h3>Content in design</h3>
+        <p>Future release modules.</p>
+    </section>
+}
+
+@code {
+    private bool IsHomePage => NavigationState.ActivePrimaryKey == "home";
+    private bool IsBedAndWardHubPage =>
+        NavigationState.ActivePrimaryKey == "bed" &&
+        NavigationState.ActiveSubItem == "DD Hub";
+
+    private bool IsBedManagementPage =>
+        NavigationState.ActivePrimaryKey == "bed" &&
+        NavigationState.ActiveSubItem == "Bed Management";
+
+    private bool IsWardOperationsPage =>
+        NavigationState.ActivePrimaryKey == "bed" &&
+        NavigationState.ActiveSubItem == "Ward Operations";
+
+    private bool IsAllocationCentrePage =>
+        NavigationState.ActivePrimaryKey == "bed" &&
+        NavigationState.ActiveSubItem == "Allocation Centre";
+
+    protected override void OnInitialized()
+    {
+        NavigationState.Changed += OnNavigationChanged;
+    }
+
+    private void OnNavigationChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        NavigationState.Changed -= OnNavigationChanged;
+    }
+}

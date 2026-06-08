@@ -1,0 +1,59 @@
+@using QHPFH_ConceptPrototype.Components.BedManagement.Shared
+
+<section class="bm-v2-view bm-v2-view--ward" aria-label="Ward V2 balanced view">
+    <OperationalBanner Snapshot="@Snapshot" Message="@($"Ward SAFEST review: confirm senior review, discharge readiness and barriers preventing movement in {Ward.Name}.")" Tone="Balanced" />
+    <FlowSwimlanePanel Snapshot="@Snapshot" />
+    <div class="bm-v2-ward-review-grid">
+        <div class="bm-v2-emphasis-table"><PerformanceTable Title="Patient movement blockers and required decisions" Rows="@BedRows" /></div>
+        <div class="bm-v2-stack bm-v2-stack--review">
+            <CleaningStatusPanel Beds="@Ward.Beds" />
+            <TransferQueuePanel Beds="@Ward.Beds" />
+        </div>
+    </div>
+    <MetricTileRow Snapshot="@Snapshot" />
+    <div class="bm-v2-secondary-grid bm-v2-secondary-grid--compact">
+        <CoordinationPanel Events="@Ward.OperationalEvents" />
+        <ActionTracker Signals="@Ward.OperationalSignals" />
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public Ward Ward { get; set; } = default!;
+    private CapacitySnapshot Snapshot => BedManagementDemoData.GetWardSnapshot(Ward.Id)!;
+    private IReadOnlyList<PerformanceRow> BedRows => Ward.Beds.Select(bed => new PerformanceRow(
+        bed.Label,
+        GetActionPriority(bed),
+        GetJourneyStatus(bed),
+        GetJourneyDetail(bed))).OrderBy(row => row.Value == "Monitor").ToArray();
+
+    private static string GetActionPriority(Bed bed)
+    {
+        if (bed.NextExpectedAction.Contains("Senior", StringComparison.OrdinalIgnoreCase)) return "Review now";
+        if (bed.Discharge?.Status == FlowStatus.Ready) return "Prepare move";
+        if (bed.Discharge is not null || bed.Transfer is not null || bed.Status is BedStatus.PendingCleaning or BedStatus.Maintenance) return "Resolve blocker";
+        return "Monitor";
+    }
+
+    private static string GetJourneyStatus(Bed bed)
+    {
+        if (bed.NextExpectedAction.Contains("Senior", StringComparison.OrdinalIgnoreCase)) return "Senior review";
+        if (bed.Discharge is not null) return bed.Discharge.Status == FlowStatus.Ready ? "Discharge ready" : "Discharge barrier";
+        if (bed.Transfer is not null) return "Transfer delay / review";
+        return bed.IsOccupied ? bed.AssignedPatient?.AcuityLabel ?? "Occupied" : bed.Status.ToString();
+    }
+
+    private static string GetJourneyDetail(Bed bed)
+    {
+        if (bed.Discharge is { } discharge)
+        {
+            return $"EDD {discharge.PlannedTime} · {discharge.Barrier} · {bed.NextExpectedAction}";
+        }
+
+        if (bed.Transfer is { } transfer)
+        {
+            return $"Transfer {transfer.Status} to {transfer.TargetWard} · {bed.NextExpectedAction}";
+        }
+
+        return string.IsNullOrWhiteSpace(bed.NextExpectedAction) ? bed.OperationalNote : bed.NextExpectedAction;
+    }
+}

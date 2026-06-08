@@ -1,0 +1,10 @@
+<section class="concept-shell-mode">
+    <div class="shell-mode-watermark" aria-hidden="true">Concept</div>
+    <MainContentShell>
+        @ChildContent
+    </MainContentShell>
+</section>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

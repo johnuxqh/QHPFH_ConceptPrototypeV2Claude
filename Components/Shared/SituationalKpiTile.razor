@@ -1,0 +1,85 @@
+@using System.Globalization
+<article class="situational-kpi-card @ColorClass @TileTypeClass @(AdditionalClasses ?? string.Empty)">
+    @if (ShowInfoIcon)
+    {
+        <div class="situational-kpi-info-wrap" @onclick:stopPropagation="true">
+            <button type="button" class="situational-kpi-info-btn" aria-label="More information about @Title" @onclick="OnInfoClick">
+                <img src="images/icons/info-lightgrey.png" alt="" />
+            </button>
+            @if (IsInfoOpen && !string.IsNullOrWhiteSpace(InfoText))
+            {
+                <div class="situational-kpi-info-popover" role="tooltip">@InfoText</div>
+            }
+        </div>
+    }
+
+    <div class="situational-kpi-title">@Title.ToUpperInvariant()</div>
+
+    @if (TileType == "breakdown")
+    {
+        <div class="situational-kpi-main situational-kpi-breakdown-main">
+            <img class="situational-kpi-icon" src="@MainIconPath" alt="" />
+            <div class="situational-kpi-breakdown-values">
+                @foreach (var item in BreakdownItems)
+                {
+                    <div class="situational-kpi-breakdown-row"><span>@item.Label</span><strong>@item.Value</strong></div>
+                }
+            </div>
+        </div>
+        <div class="situational-kpi-breakdown-total">@Subtitle <strong>@Value</strong></div>
+    }
+    else if (TileType == "activity")
+    {
+        <div class="situational-kpi-main situational-kpi-breakdown-main">
+            <img class="situational-kpi-icon" src="@MainIconPath" alt="" />
+            <div class="situational-kpi-breakdown-values">
+                @foreach (var item in BreakdownItems)
+                {
+                    <div class="situational-kpi-breakdown-row"><span>@item.Label</span><strong>@item.Value</strong></div>
+                }
+            </div>
+        </div>
+        <div class="situational-kpi-tabs">
+            @foreach (var tab in Tabs)
+            {
+                <button type="button" class="@(tab == ActiveTab ? "active" : null)" @onclick="() => OnTabChanged.InvokeAsync(tab)">@tab</button>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="situational-kpi-main">
+            <img class="situational-kpi-icon" src="@MainIconPath" alt="" />
+            <div class="situational-kpi-value">@Value</div>
+        </div>
+        <div class="situational-kpi-subtitle">@Subtitle</div>
+    }
+</article>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string Value { get; set; } = string.Empty;
+    [Parameter] public string Subtitle { get; set; } = string.Empty;
+    [Parameter] public string IconName { get; set; } = "open-bed-default";
+    [Parameter] public string ColorClass { get; set; } = "kpi-blue";
+    [Parameter] public string TileType { get; set; } = "standard";
+    [Parameter] public string InfoText { get; set; } = string.Empty;
+    [Parameter] public bool ShowInfoIcon { get; set; } = true;
+    [Parameter] public bool IsInfoOpen { get; set; }
+    [Parameter] public EventCallback OnInfoClick { get; set; }
+    [Parameter] public IReadOnlyList<KpiBreakdownItem> BreakdownItems { get; set; } = Array.Empty<KpiBreakdownItem>();
+    [Parameter] public IReadOnlyList<string> Tabs { get; set; } = Array.Empty<string>();
+    [Parameter] public string ActiveTab { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> OnTabChanged { get; set; }
+    [Parameter] public string? AdditionalClasses { get; set; }
+
+    private string MainIconPath
+        => Title.Equals("Physical Capacity", StringComparison.OrdinalIgnoreCase)
+            ? "images/icons/open-bed-default.png"
+            : Title.Equals("Beds Returning", StringComparison.OrdinalIgnoreCase)
+                ? "images/icons/cleaning-orange.png"
+                : $"images/icons/{IconName}.png";
+    private string TileTypeClass => $"kpi-type-{TileType}";
+
+    public record KpiBreakdownItem(string Label, string Value);
+}

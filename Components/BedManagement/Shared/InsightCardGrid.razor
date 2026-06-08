@@ -1,0 +1,18 @@
+<section class="bm-shared-panel" aria-label="Pressure and support signals">
+    <header><h3>Pressure and support signals</h3><span>@DisplayContextLabel</span></header>
+    <div class="bm-shared-card-grid">
+        @foreach (var signal in VisibleSignals)
+        {
+            <article><span class="bm-shared-status">@signal.Severity</span><strong>@signal.Label</strong><p>@signal.Detail</p></article>
+        }
+        @if (!VisibleSignals.Any()) { <p class="bm-shared-empty">No additional pressure signals currently require attention.</p> }
+    </div>
+</section>
+
+@code {
+    [Parameter] public IReadOnlyList<InsightSignal> Signals { get; set; } = [];
+    [Parameter] public BedManagementVersion Version { get; set; } = BedManagementVersion.V2Balanced;
+    [Parameter] public string? ContextLabel { get; set; }
+    private IReadOnlyList<InsightSignal> VisibleSignals => Signals.Where(signal => signal.SupportedVersion == Version).ToArray();
+    private string DisplayContextLabel => ContextLabel ?? Version switch { BedManagementVersion.V1DataInsights => "Awareness priorities", BedManagementVersion.V2Balanced => "Decision support", _ => "Operational priorities" };
+}

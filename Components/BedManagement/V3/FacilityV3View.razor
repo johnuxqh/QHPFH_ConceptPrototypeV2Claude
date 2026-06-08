@@ -1,0 +1,33 @@
+@using QHPFH_ConceptPrototype.Components.BedManagement.Shared
+
+<section class="bm-v3-view bm-v3-view--facility" aria-label="Facility V3 operational view">
+    <OperationalBanner Snapshot="@Snapshot" Message="Bed manager operational workspace: resolve blockers, protect discharge opportunities and prepare the next-bed decision." Tone="Operational" />
+    <div class="bm-v3-facility-grid">
+        <div class="bm-v3-emphasis-table"><PerformanceTable Title="Ward priorities: blockers, discharge and next-bed decisions" Rows="@WardRows" /></div>
+        <div class="bm-v3-stack bm-v3-stack--facility">
+            <ActionTracker Signals="@Actions" />
+            <AllocationSummary Snapshot="@Snapshot" />
+            <CleaningStatusPanel Beds="@Beds" />
+        </div>
+    </div>
+    <MetricTileRow Snapshot="@Snapshot" />
+    <div class="bm-v3-triple-grid">
+        <TransferQueuePanel Beds="@Beds" />
+        <CoordinationPanel Events="@Facility.OperationalEvents" />
+        <FlowSwimlanePanel Snapshot="@Snapshot" />
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public Facility Facility { get; set; } = default!;
+    private CapacitySnapshot Snapshot => BedManagementDemoData.GetFacilitySnapshot(Facility.Id)!;
+    private IReadOnlyList<Bed> Beds => Facility.Wards.SelectMany(ward => ward.Beds).ToArray();
+    private IReadOnlyList<OperationalSignal> Actions => Facility.Wards.SelectMany(ward => ward.OperationalSignals).Take(5).ToArray();
+    private IReadOnlyList<PerformanceRow> WardRows => Facility.Wards.Select(ward =>
+    {
+        var snapshot = BedManagementDemoData.GetWardSnapshot(ward.Id)!;
+        var blockerCount = snapshot.PendingCleaning + snapshot.PendingMaintenance + snapshot.TransferRequests;
+        var priority = blockerCount > 0 || snapshot.ExpectedAdmissions > snapshot.AvailableBeds ? "Review now" : "Monitor";
+        return new PerformanceRow(ward.Name, priority, ward.EscalationStatus, $"{snapshot.AvailableBeds} available · {snapshot.PlannedDischarges} discharge opportunities · {snapshot.TransferRequests} transfers · {blockerCount} blockers");
+    }).OrderBy(row => row.Value == "Monitor").ToArray();
+}

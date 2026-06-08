@@ -1,0 +1,15 @@
+<div class="shell-mode-toggle" role="group" aria-label="Shell mode">
+    <button type="button"
+            class="shell-mode-button @(Mode == ShellMode.Std ? "selected" : null)"
+            aria-pressed="@(Mode == ShellMode.Std)"
+            @onclick="() => OnModeChanged.InvokeAsync(ShellMode.Std)">STD</button>
+    <button type="button"
+            class="shell-mode-button @(Mode == ShellMode.Concept ? "selected" : null)"
+            aria-pressed="@(Mode == ShellMode.Concept)"
+            @onclick="() => OnModeChanged.InvokeAsync(ShellMode.Concept)">CONCEPT</button>
+</div>
+
+@code {
+    [Parameter] public ShellMode Mode { get; set; }
+    [Parameter] public EventCallback<ShellMode> OnModeChanged { get; set; }
+}

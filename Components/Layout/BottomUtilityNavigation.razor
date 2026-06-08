@@ -1,0 +1,346 @@
+<footer class="utility-shell" aria-label="Utility navigation">
+    @if (_isChatOpen)
+    {
+        <section class="utility-overlay utility-chat" aria-label="Bed Managers Chat">
+            <header class="utility-overlay-header">
+                <div>
+                    <p class="utility-kicker">Operational Utility</p>
+                    <h3>Bed Managers Chat</h3>
+                </div>
+                <button type="button" class="oncall-close" aria-label="Close chat" @onclick="CloseChat">×</button>
+            </header>
+
+            <div class="chat-avatar-row">
+                <span>Your avatar</span>
+                @foreach (var emoji in AvatarOptions)
+                {
+                    var selected = emoji == _selectedAvatar;
+                    <button type="button" class="chat-avatar-option @(selected ? "selected" : null)" @onclick="() => SelectAvatar(emoji)">@emoji</button>
+                }
+            </div>
+
+            <div class="chat-thread" role="log" aria-live="polite">
+                @foreach (var message in _chatMessages)
+                {
+                    var mine = message.IsMine;
+                    <article class="chat-message @(mine ? "mine" : null)">
+                        <div class="chat-bubble-avatar">@message.Avatar</div>
+                        <div class="chat-bubble-content">
+                            <header>
+                                <strong>@message.Sender</strong>
+                                <time>@message.Timestamp</time>
+                            </header>
+                            <p>@message.Text</p>
+                        </div>
+                    </article>
+                }
+            </div>
+
+            <footer class="chat-compose">
+                <input type="text" placeholder="Type an operational update…" @bind="_draftMessage" @bind:event="oninput" />
+                <button type="button" class="standard-btn" @onclick="SendChatMessage">Send</button>
+            </footer>
+        </section>
+    }
+
+    @if (_isDowntimeOpen)
+    {
+        <section class="utility-overlay utility-modal" aria-label="Downtime print preparation">
+            <header class="utility-overlay-header">
+                <div>
+                    <p class="utility-kicker">Operational Preparedness</p>
+                    <h3>Downtime / Print Preparation</h3>
+                </div>
+                <button type="button" class="oncall-close" aria-label="Close downtime" @onclick="CloseDowntime">×</button>
+            </header>
+            <p class="utility-overlay-copy">You have selected Downtime mode. In the full Patient Flow Hub platform this function would prepare printable operational summaries and open print options for use during downtime events, connectivity interruptions or power outages.</p>
+            <div class="utility-card-grid">
+                @foreach (var item in DowntimeModules)
+                {
+                    <article class="utility-card"><h4>@item</h4><p>Prepared for offline operational continuity.</p></article>
+                }
+            </div>
+            <footer class="utility-overlay-footer">
+                <button type="button" class="standard-btn" @onclick="CloseDowntime">Close</button>
+                <button type="button" class="standard-btn selected" @onclick="CloseDowntime">Return to prototype</button>
+            </footer>
+        </section>
+    }
+
+    @if (_isReportsOpen)
+    {
+        <section class="utility-overlay utility-modal" aria-label="Operational reports">
+            <header class="utility-overlay-header">
+                <div>
+                    <p class="utility-kicker">Operational Utility</p>
+                    <h3>Operational Reports</h3>
+                    <p class="utility-subtitle">What would you like to generate?</p>
+                </div>
+                <button type="button" class="oncall-close" aria-label="Close reports" @onclick="CloseReports">×</button>
+            </header>
+            <div class="utility-card-grid">
+                @foreach (var report in Reports)
+                {
+                    <article class="utility-card report-card">
+                        <h4>@report.Title</h4>
+                        <p>@report.Description</p>
+                        <button type="button" class="standard-btn">Generate</button>
+                    </article>
+                }
+            </div>
+            <footer class="utility-overlay-footer">
+                <button type="button" class="standard-btn" @onclick="CloseReports">Close</button>
+                <button type="button" class="standard-btn selected" @onclick="CloseReports">Return to prototype</button>
+            </footer>
+        </section>
+    }
+
+    @if (_isOnCallOpen)
+    {
+        <section class="utility-overlay utility-oncall" aria-label="Who's currently on call">
+            <header class="utility-overlay-header">
+                <div>
+                    <p class="utility-kicker">Rapid Access</p>
+                    <h3>On Call</h3>
+                </div>
+                <button type="button" class="oncall-close" aria-label="Close on call" @onclick="CloseOnCall">×</button>
+            </header>
+            <div class="oncall-list">
+                @foreach (var contact in OnCallContacts)
+                {
+                    <article class="oncall-card">
+                        <h4>@contact.Role</h4>
+                        <p><strong>@contact.Name</strong></p>
+                        <p>@contact.Status</p>
+                        <p>@contact.Availability</p>
+                        <p>Ext: @contact.Extension</p>
+                    </article>
+                }
+            </div>
+            <footer class="utility-overlay-footer">
+                <button type="button" class="standard-btn selected" @onclick="OpenDirectory">Open Full Facility Directory</button>
+            </footer>
+        </section>
+    }
+
+    @if (_isDirectoryOpen)
+    {
+        <section class="utility-overlay utility-modal" aria-label="Full facility directory">
+            <header class="utility-overlay-header">
+                <div>
+                    <p class="utility-kicker">Operational Directory</p>
+                    <h3>Full Facility Directory</h3>
+                </div>
+                <button type="button" class="oncall-close" aria-label="Close directory" @onclick="CloseDirectory">×</button>
+            </header>
+            <div class="support-search utility-search">
+                <span><MudIcon Icon="@Icons.Material.Outlined.Search" Size="Size.Small" /></span>
+                <input type="search" placeholder="Search role, team, extension" @bind="_directorySearch" @bind:event="oninput" />
+            </div>
+            <div class="directory-groups">
+                @foreach (var group in FilteredDirectoryGroups)
+                {
+                    <article class="directory-group">
+                        <h4>@group.Name</h4>
+                        @foreach (var person in group.People)
+                        {
+                            <div class="directory-row">
+                                <span>@person.Name</span>
+                                <span>@person.Role</span>
+                                <span>Ext: @person.Extension</span>
+                            </div>
+                        }
+                    </article>
+                }
+            </div>
+        </section>
+    }
+
+    @if (_isSupportOpen)
+    {
+        <section class="utility-overlay support-drawer" aria-label="Support and FAQs">
+            <header class="support-header">
+                <MudIcon Icon="@Icons.Material.Outlined.HelpOutline" Size="Size.Small" />
+                <h3>Support</h3>
+                <button type="button" class="oncall-close" aria-label="Close support" @onclick="CloseSupport">×</button>
+            </header>
+
+            <div class="support-search">
+                <span><MudIcon Icon="@Icons.Material.Outlined.Search" Size="Size.Small" /></span>
+                <input type="search" placeholder="Search FAQs" @bind="_supportSearch" @bind:event="oninput" />
+                <button type="button">Find</button>
+            </div>
+
+            <section class="support-summary">
+                <p>Browse frequently asked operational questions or contact support for assistance.</p>
+                <button type="button" class="standard-btn">Contact support</button>
+            </section>
+
+            <section class="support-list" role="list">
+                @foreach (var faq in FilteredFaqs)
+                {
+                    var isOpen = _openFaqId == faq.Id;
+                    <article class="faq-item" role="listitem">
+                        <button type="button" class="faq-trigger" @onclick="() => ToggleFaq(faq.Id)">
+                            <span>@faq.Question</span>
+                            <MudIcon Icon="@(isOpen ? Icons.Material.Outlined.ExpandLess : Icons.Material.Outlined.ExpandMore)" Size="Size.Small" />
+                        </button>
+                        @if (isOpen)
+                        {
+                            <div class="faq-answer">@faq.Answer</div>
+                        }
+                    </article>
+                }
+            </section>
+        </section>
+    }
+
+    <div class="utility-bar" role="tablist" aria-label="Footer utilities">
+        @foreach (var item in Items)
+        {
+            var isSelected = item == _activeItem;
+            <button type="button" class="utility-tab @(isSelected ? "selected" : null)" role="tab" aria-selected="@isSelected" @onclick="() => SelectItem(item)">@item</button>
+        }
+    </div>
+</footer>
+
+@code {
+    private readonly string[] Items = ["Bed Managers Chat", "On Call", "Reports", "Downtime", "Support"];
+    private string _activeItem = string.Empty;
+    private bool _isChatOpen;
+    private bool _isOnCallOpen;
+    private bool _isSupportOpen;
+    private bool _isReportsOpen;
+    private bool _isDowntimeOpen;
+    private bool _isDirectoryOpen;
+
+    private string _selectedAvatar = "👩‍⚕️";
+    private string _draftMessage = string.Empty;
+    private string _directorySearch = string.Empty;
+    private string _supportSearch = string.Empty;
+    private int _openFaqId = 1;
+    private readonly string[] AvatarOptions = ["🤣", "😎", "🚑", "👩‍⚕️", "🛏️"];
+
+    private readonly List<ChatMessage> _chatMessages =
+    [
+        new("PICU Lead", "PICU preparing 2 step-down beds.", "16:05", "🚑", false),
+        new("ED Shift", "ED flow escalating — likely Tier 3 by 1700.", "16:11", "😎", false),
+        new("11A NUM", "11A discharge transport delayed.", "16:14", "🛏️", false),
+        new("Facilities", "Maintenance attending Bed 8BC.", "16:16", "🔧", false)
+    ];
+
+    private readonly string[] DowntimeModules =
+    [
+        "Current ward operational summary", "Bed availability snapshot", "Current hospital pressures", "Delayed discharge list", "Admissions and discharges", "Ward patient lists", "Escalation summary"
+    ];
+
+    private readonly List<ReportItem> Reports =
+    [
+        new("Bed Management Trends", "Review trend movement across occupancy and access block."),
+        new("Current Hospital Pressure Report", "Snapshot of active pressure tier and drivers."),
+        new("Monthly Bed Metrics", "Monthly indicators for occupancy, discharge delay and transfers."),
+        new("Ward Occupancy Summary", "Ward-level occupancy and bed status by stream."),
+        new("Delayed Flow Report", "Patients awaiting movement and expected barriers."),
+        new("Admissions & Discharges", "Current and projected movement by service."),
+        new("Outlier & Catchment Report", "Outlier allocation and catchment complexity profile."),
+        new("Operational Escalation Summary", "Escalation actions and command-level interventions.")
+    ];
+
+    private readonly List<OnCallContact> OnCallContacts =
+    [
+        new("Executive On Call", "A. Morgan", "Available", "Available until 0700", "45111"),
+        new("Paediatric Surgery", "Dr Strange", "Available", "Available until 0700", "45555"),
+        new("ICU Consultant", "Dr K. Banner", "In theatre", "Cover by registrar until 1830", "45120"),
+        new("Pharmacy", "S. Carter", "Available", "Available until 2200", "45770"),
+        new("IT Support", "Digital Ops", "Available", "24/7", "45001"),
+        new("Facilities", "Engineering Desk", "Responding", "Attending Bed 8BC", "45042"),
+        new("Disaster Management", "Command Officer", "Standby", "Escalation only", "45190"),
+        new("Security", "Security Control", "Available", "24/7", "45999"),
+        new("Patient Flow Coordinator", "N. Singh", "Available", "Available until 1900", "45410")
+    ];
+
+    private readonly List<DirectoryGroup> DirectoryGroups =
+    [
+        new("ICU", [new("J. Wong", "ICU Consultant", "45120")]),
+        new("Pharmacy", [new("S. Carter", "After-hours Pharmacist", "45770")]),
+        new("Radiology", [new("M. Patel", "Radiology Registrar", "45331")]),
+        new("Facilities", [new("Engineering Desk", "Maintenance Coordination", "45042")]),
+        new("Patient Transport", [new("Transport Dispatch", "Patient Transport", "45260")]),
+        new("Security", [new("Security Control", "Security Operations", "45999")]),
+        new("Mental Health", [new("L. Tran", "Mental Health Liaison", "45460")]),
+        new("Executive", [new("A. Morgan", "Executive On Call", "45111")]),
+        new("NUMs", [new("K. Doyle", "11A NUM", "45411")]),
+        new("Bed Management", [new("N. Singh", "Patient Flow Coordinator", "45410")]),
+        new("Allied Health", [new("R. Mason", "Allied Health Coordinator", "45388")])
+    ];
+
+    private readonly List<FaqItem> Faqs =
+    [
+        new(1, "How do I update bed status quickly?", "Use List/Grid/Compact actions or Ward Operations drag interactions to update operational states."),
+        new(2, "What does Open Operational Beds mean?", "Beds currently available for operational use; this differs from total physical beds."),
+        new(3, "How do I filter wards from insights?", "Click an insight card to filter the ward list. Use Clear to reset."),
+        new(4, "How do I report an issue with data?", "Use Contact support from this panel and include ward/facility plus timestamp."),
+        new(5, "Can I print downtime summaries?", "Use the Downtime utility item for printable continuity summaries.")
+    ];
+
+    private IEnumerable<DirectoryGroup> FilteredDirectoryGroups =>
+        DirectoryGroups
+            .Select(group => new DirectoryGroup(group.Name, group.People.Where(MatchesSearch).ToList()))
+            .Where(group => group.People.Count != 0 || string.IsNullOrWhiteSpace(_directorySearch));
+
+    private IEnumerable<FaqItem> FilteredFaqs =>
+        string.IsNullOrWhiteSpace(_supportSearch)
+            ? Faqs
+            : Faqs.Where(f => f.Question.Contains(_supportSearch, StringComparison.OrdinalIgnoreCase) || f.Answer.Contains(_supportSearch, StringComparison.OrdinalIgnoreCase));
+
+    [Parameter] public bool IsDarkMode { get; set; }
+
+    private void SelectItem(string item)
+    {
+        _isChatOpen = item == "Bed Managers Chat" && !_isChatOpen;
+        _isOnCallOpen = item == "On Call" && !_isOnCallOpen;
+        _isReportsOpen = item == "Reports" && !_isReportsOpen;
+        _isDowntimeOpen = item == "Downtime" && !_isDowntimeOpen;
+        _isSupportOpen = item == "Support" && !_isSupportOpen;
+        _isDirectoryOpen = false;
+
+        _activeItem = item;
+        if (!_isChatOpen && !_isOnCallOpen && !_isReportsOpen && !_isDowntimeOpen && !_isSupportOpen)
+        {
+            _activeItem = string.Empty;
+        }
+    }
+
+    private bool MatchesSearch(DirectoryPerson person)
+    {
+        if (string.IsNullOrWhiteSpace(_directorySearch)) return true;
+        var term = _directorySearch.Trim();
+        return person.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
+               || person.Role.Contains(term, StringComparison.OrdinalIgnoreCase)
+               || person.Extension.Contains(term, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void SelectAvatar(string emoji) => _selectedAvatar = emoji;
+    private void SendChatMessage()
+    {
+        if (string.IsNullOrWhiteSpace(_draftMessage)) return;
+        _chatMessages.Add(new ChatMessage("You", _draftMessage.Trim(), DateTime.Now.ToString("HH:mm"), _selectedAvatar, true));
+        _draftMessage = string.Empty;
+    }
+
+    private void CloseChat() { _isChatOpen = false; if (_activeItem == "Bed Managers Chat") _activeItem = string.Empty; }
+    private void CloseOnCall() { _isOnCallOpen = false; if (_activeItem == "On Call") _activeItem = string.Empty; }
+    private void CloseReports() { _isReportsOpen = false; if (_activeItem == "Reports") _activeItem = string.Empty; }
+    private void CloseDowntime() { _isDowntimeOpen = false; if (_activeItem == "Downtime") _activeItem = string.Empty; }
+    private void CloseDirectory() => _isDirectoryOpen = false;
+    private void CloseSupport() { _isSupportOpen = false; if (_activeItem == "Support") _activeItem = string.Empty; }
+    private void OpenDirectory() => _isDirectoryOpen = true;
+    private void ToggleFaq(int id) => _openFaqId = _openFaqId == id ? -1 : id;
+
+    private sealed record ChatMessage(string Sender, string Text, string Timestamp, string Avatar, bool IsMine);
+    private sealed record ReportItem(string Title, string Description);
+    private sealed record OnCallContact(string Role, string Name, string Status, string Availability, string Extension);
+    private sealed record DirectoryGroup(string Name, List<DirectoryPerson> People);
+    private sealed record DirectoryPerson(string Name, string Role, string Extension);
+    private sealed record FaqItem(int Id, string Question, string Answer);
+}
